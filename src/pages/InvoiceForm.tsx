@@ -72,12 +72,15 @@ export const InvoiceForm: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userProfile, setUserProfile] = useState<{ user_name: string | null }>({ user_name: null })
+  const [showNewClientForm, setShowNewClientForm] = useState(false)
+  const [savingNewClient, setSavingNewClient] = useState(false)
+  const [newClient, setNewClient] = useState({ name: '', email: '', phone: '', address: '' })
 
   const [formData, setFormData] = useState({
     client_id: preselectedClientId || '',
     invoice_number: '',
     issue_date: format(new Date(), 'yyyy-MM-dd'),
-    due_date_days: 55, // Default to 55 days
+    due_date_days: 55,
     currency: 'USD',
     discount_amount: 0,
     notes: '',
@@ -105,7 +108,6 @@ export const InvoiceForm: React.FC = () => {
     }
   }, [user, invoiceId, isEditing])
 
-  // Generate invoice number only for new invoices
   useEffect(() => {
     if (user && !isEditing && !invoiceId) {
       generateInvoiceNumber().then(invoiceNumber => {
@@ -136,7 +138,6 @@ export const InvoiceForm: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch clients
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select('*')
@@ -145,7 +146,6 @@ export const InvoiceForm: React.FC = () => {
 
       if (clientsError) throw clientsError
 
-      // Fetch shipment prices
       const { data: pricesData, error: pricesError } = await supabase
         .from('shipment_pricing')
         .select('*')
@@ -167,7 +167,6 @@ export const InvoiceForm: React.FC = () => {
 
   const generateInvoiceNumber = async (): Promise<string> => {
     try {
-      // Get current timestamp for uniqueness
       const currentDate = new Date()
       const year = currentDate.getFullYear()
       const month = String(currentDate.getMonth() + 1).padStart(2, '0')
@@ -176,14 +175,11 @@ export const InvoiceForm: React.FC = () => {
       const minutes = String(currentDate.getMinutes()).padStart(2, '0')
       const seconds = String(currentDate.getSeconds()).padStart(2, '0')
       
-      // Add random component for extra uniqueness
       const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
       
-      // Create unique invoice number with timestamp and random component
       return `OMC${year}${month}${day}${hours}${minutes}${seconds}${randomSuffix}`
     } catch (error) {
       console.error('Error generating invoice number:', error)
-      // Fallback to timestamp-based number
       return `OMC${Date.now()}${Math.floor(Math.random() * 1000)}`
     }
   }
@@ -195,7 +191,6 @@ export const InvoiceForm: React.FC = () => {
   }
 
   const addItem = () => {
-    // Validate current item before adding
     if (!currentItem.shipment_type.trim() || !currentItem.description.trim() || !currentItem.cbm || parseFloat(currentItem.cbm.toString()) <= 0) {
       showError('Validation Error', 'Please fill in all required fields (Shipment Type, Description, and CBM)')
       return
@@ -206,7 +201,6 @@ export const InvoiceForm: React.FC = () => {
       return
     }
 
-    // Convert string values to numbers for the final item
     const finalItem = {
       ...currentItem,
       cbm: parseFloat(currentItem.cbm.toString()) || 0,
@@ -214,10 +208,8 @@ export const InvoiceForm: React.FC = () => {
       total: (parseFloat(currentItem.cbm.toString()) || 0) * (parseFloat(currentItem.unit_price.toString()) || 0)
     }
 
-    // Add current item to the top of the list
     setItems([finalItem, ...items])
     
-    // Reset current item for new entry
     setCurrentItem({
       id: Date.now().toString(),
       shipment_type: '',
@@ -236,7 +228,6 @@ export const InvoiceForm: React.FC = () => {
   const updateCurrentItem = (field: keyof InvoiceItem, value: any) => {
     const updatedItem = { ...currentItem, [field]: value }
     
-    // Auto-calculate unit price when shipment type changes
     if (field === 'shipment_type') {
       const selectedPrice = shipmentPrices.find(p => p.shipment_type === value)
       if (selectedPrice) {
@@ -244,7 +235,6 @@ export const InvoiceForm: React.FC = () => {
       }
     }
     
-    // Calculate total: cbm_per_item * price_per_cbm
     const cbmValue = parseFloat(updatedItem.cbm.toString()) || 0
     const priceValue = parseFloat(updatedItem.unit_price.toString()) || 0
     updatedItem.total = cbmValue * priceValue
@@ -268,7 +258,6 @@ export const InvoiceForm: React.FC = () => {
     try {
       setLoading(true)
       
-      // Fetch invoice with client details
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select(`
@@ -280,7 +269,6 @@ export const InvoiceForm: React.FC = () => {
 
       if (invoiceError) throw invoiceError
 
-      // Check if user can edit this invoice (only draft status and own invoices)
       if (invoiceData.user_id !== user?.id) {
         showError('Access Denied', 'You can only edit your own invoices')
         navigate('/invoices')
@@ -293,7 +281,6 @@ export const InvoiceForm: React.FC = () => {
         return
       }
 
-      // Fetch invoice items
       const { data: itemsData, error: itemsError } = await supabase
         .from('invoice_items')
         .select('*')
@@ -302,16 +289,13 @@ export const InvoiceForm: React.FC = () => {
 
       if (itemsError) throw itemsError
 
-      // Calculate due date days from issue and due dates
       const issueDate = new Date(invoiceData.issue_date)
       const dueDate = new Date(invoiceData.due_date)
       const daysDiff = Math.ceil((dueDate.getTime() - issueDate.getTime()) / (1000 * 60 * 60 * 24))
       
-      // Find matching due date option or default to 30
       const matchingOption = DUE_DATE_OPTIONS.find(option => option.days === daysDiff)
       const dueDateDays = matchingOption ? daysDiff : 30
 
-      // Populate form data
       setFormData({
         client_id: invoiceData.client_id,
         invoice_number: invoiceData.invoice_number,
@@ -323,9 +307,7 @@ export const InvoiceForm: React.FC = () => {
         payment_instructions: invoiceData.payment_instructions || ''
       })
 
-      // Convert invoice items to the format expected by the form
       const formattedItems = itemsData?.map((item: any) => {
-        // Parse description to extract shipment type and description
         const parts = item.description.split(': ')
         const shipmentType = parts.length > 1 ? parts[0] : (item.shipment_type || 'General Cargo')
         const description = parts.length > 1 ? parts[1] : item.description
@@ -335,7 +317,7 @@ export const InvoiceForm: React.FC = () => {
           shipment_type: shipmentType,
           description: description,
           item_quantity: item.item_quantity || 1,
-          cbm: item.cbm || item.quantity, // Use cbm if available, fallback to quantity
+          cbm: item.cbm || item.quantity,
           unit_price: item.unit_price,
           total: item.total
         }
@@ -354,10 +336,45 @@ export const InvoiceForm: React.FC = () => {
     }
   }
 
+  const handleSaveNewClient = async () => {
+    if (!newClient.name.trim()) {
+      showError('Validation Error', 'Client name is required')
+      return
+    }
+
+    setSavingNewClient(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert({
+          user_id: user?.id,
+          name: newClient.name.trim(),
+          email: newClient.email.trim() || null,
+          phone: newClient.phone.trim() || null,
+          address: newClient.address.trim() || null
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setClients(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+      setFormData(prev => ({ ...prev, client_id: data.id }))
+      setNewClient({ name: '', email: '', phone: '', address: '' })
+      setShowNewClientForm(false)
+      showSuccess('Client Saved', `${data.name} has been saved and selected`)
+    } catch (error) {
+      console.error('Error saving new client:', error)
+      showError('Error', 'Failed to save this client. Please try again.')
+    } finally {
+      setSavingNewClient(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Comprehensive validation before submission
     if (!formData.client_id) {
       showError('Validation Error', 'Please select a client')
       return
@@ -373,7 +390,6 @@ export const InvoiceForm: React.FC = () => {
       return
     }
 
-    // Check if there are any items or if current item has data
     const currentItemCbm = parseFloat(currentItem.cbm.toString()) || 0
     const allItems = currentItem.shipment_type.trim() && currentItem.description.trim() && currentItemCbm > 0 
       ? [currentItem, ...items] 
@@ -384,7 +400,6 @@ export const InvoiceForm: React.FC = () => {
       return
     }
 
-    // Validate all items have required fields
     for (let i = 0; i < allItems.length; i++) {
       const item = allItems[i]
       if (!item.shipment_type.trim()) {
@@ -410,7 +425,6 @@ export const InvoiceForm: React.FC = () => {
     setSaving(true)
 
     try {
-      // Ensure user profile exists before creating invoice
       const { data: existingProfile, error: profileCheckError } = await supabase
         .from('profiles')
         .select('id')
@@ -421,7 +435,6 @@ export const InvoiceForm: React.FC = () => {
         throw profileCheckError
       }
 
-      // Create profile if it doesn't exist
       if (!existingProfile) {
         const { error: profileCreateError } = await supabase
           .from('profiles')
@@ -442,7 +455,6 @@ export const InvoiceForm: React.FC = () => {
       const dueDate = calculateDueDate(formData.issue_date, formData.due_date_days)
 
       if (isEditing && invoiceId) {
-        // Update existing invoice
         const { error: invoiceError } = await supabase
           .from('invoices')
           .update({
@@ -462,11 +474,10 @@ export const InvoiceForm: React.FC = () => {
             updated_at: new Date().toISOString()
           })
           .eq('id', invoiceId)
-          .eq('user_id', user?.id) // Security check
+          .eq('user_id', user?.id)
 
         if (invoiceError) throw invoiceError
 
-        // Delete existing items and create new ones
         const { error: deleteError } = await supabase
           .from('invoice_items')
           .delete()
@@ -474,11 +485,10 @@ export const InvoiceForm: React.FC = () => {
 
         if (deleteError) throw deleteError
 
-        // Create new invoice items
         const invoiceItems = allItems.map(item => ({
           invoice_id: invoiceId,
           description: `${item.shipment_type}: ${item.description}`,
-          quantity: item.cbm, // Store CBM as quantity for display purposes
+          quantity: item.cbm,
           unit_price: item.unit_price,
           total: item.total,
           shipment_type: item.shipment_type,
@@ -494,7 +504,6 @@ export const InvoiceForm: React.FC = () => {
 
         showSuccess('Invoice Updated', `Invoice ${formData.invoice_number} has been updated successfully`)
       } else {
-        // Create new invoice
         const { data: invoice, error: invoiceError } = await supabase
           .from('invoices')
           .insert({
@@ -505,13 +514,13 @@ export const InvoiceForm: React.FC = () => {
             due_date: dueDate,
             currency: formData.currency,
             subtotal,
-            tax_rate: 0, // No tax rate
-            tax_amount: 0, // No tax amount
+            tax_rate: 0,
+            tax_amount: 0,
             discount_amount: formData.discount_amount,
             total_amount: total,
             notes: formData.notes || null,
             payment_instructions: formData.payment_instructions || null,
-            signature: userProfile.user_name || null, // Use user's name from profile
+            signature: userProfile.user_name || null,
             status: 'draft'
           })
           .select()
@@ -519,7 +528,6 @@ export const InvoiceForm: React.FC = () => {
 
         if (invoiceError) throw invoiceError
 
-        // Create invoice items - store CBM as quantity for compatibility
         const invoiceItems = allItems.map(item => {
           const cbmValue = typeof item.cbm === 'string' ? parseFloat(item.cbm) : item.cbm
           const priceValue = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price
@@ -528,7 +536,7 @@ export const InvoiceForm: React.FC = () => {
           return {
           invoice_id: invoice.id,
           description: `${item.shipment_type}: ${item.description}`,
-          quantity: cbmValue, // Store CBM as quantity for display purposes
+          quantity: cbmValue,
           unit_price: priceValue,
           total: totalValue,
           shipment_type: item.shipment_type,
@@ -555,14 +563,11 @@ export const InvoiceForm: React.FC = () => {
     }
   }
 
-  // Check if form is valid for submission
   const isFormValid = () => {
-    // Check basic form fields
     if (!formData.client_id || !formData.invoice_number.trim() || !formData.issue_date) {
       return false
     }
 
-    // Check if there are any valid items
     const currentItemCbm = parseFloat(currentItem.cbm.toString()) || 0
     const allItems = currentItem.shipment_type.trim() && currentItem.description.trim() && currentItemCbm > 0 
       ? [currentItem, ...items] 
@@ -572,7 +577,6 @@ export const InvoiceForm: React.FC = () => {
       return false
     }
 
-    // Validate all items
     return allItems.every(item => {
       const itemCbm = typeof item.cbm === 'string' ? parseFloat(item.cbm) : item.cbm
       const itemPrice = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price
@@ -585,11 +589,8 @@ export const InvoiceForm: React.FC = () => {
 
   const { subtotal, total } = calculateTotals()
 
-  // Handle keyboard events to prevent unwanted form submission
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
-      // If Enter is pressed in an input field, prevent form submission
-      // unless it's the submit button that's focused
       if (!isFormValid()) {
         e.preventDefault()
         showError('Form Incomplete', 'Please fill in all required fields before submitting')
@@ -608,7 +609,6 @@ export const InvoiceForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Toast Container */}
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       
       <div className="flex items-center justify-between">
@@ -632,7 +632,6 @@ export const InvoiceForm: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
-        {/* Invoice Header */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center mb-6">
             <FileText className="w-5 h-5 text-gray-400 mr-2" />
@@ -709,34 +708,85 @@ export const InvoiceForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Client Selection */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center mb-6">
-            <User className="w-5 h-5 text-gray-400 mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Client Information</h2>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Client *
-            </label>
-            <select
-              value={formData.client_id}
-              onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              required
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <User className="w-5 h-5 text-gray-400 mr-2" />
+              <h2 className="text-lg font-semibold text-gray-900">Client Information</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowNewClientForm(!showNewClientForm)}
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
             >
-              <option value="">Choose a client...</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name} {client.email && `(${client.email})`}
-                </option>
-              ))}
-            </select>
+              <Plus className="w-4 h-4" />
+              {showNewClientForm ? 'Cancel' : 'New Client'}
+            </button>
           </div>
+
+          {showNewClientForm ? (
+            <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <input
+                type="text"
+                placeholder="Client name *"
+                value={newClient.name}
+                onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Phone"
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <textarea
+                placeholder="Address"
+                value={newClient.address}
+                onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              />
+              <button
+                type="button"
+                onClick={handleSaveNewClient}
+                disabled={savingNewClient}
+                className="w-full bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg px-4 py-2 font-medium disabled:opacity-50"
+              >
+                {savingNewClient ? 'Saving...' : 'Save & Select Client'}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Client *
+              </label>
+              <select
+                value={formData.client_id}
+                onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                required
+              >
+                <option value="">Choose a client...</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name} {client.email && `(${client.email})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
-        {/* Invoice Items */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
@@ -745,7 +795,6 @@ export const InvoiceForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Current Item Input Form */}
           <div className="p-4 border-2 border-dashed border-primary-300 rounded-lg bg-primary-50 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-gray-900">Add New Item</h3>
@@ -868,7 +917,6 @@ export const InvoiceForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Added Items List */}
           {items.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Added Items ({items.length})</h3>
@@ -928,7 +976,6 @@ export const InvoiceForm: React.FC = () => {
           )}
         </div>
 
-        {/* Calculations */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center mb-6">
             <Calculator className="w-5 h-5 text-gray-400 mr-2" />
@@ -951,7 +998,6 @@ export const InvoiceForm: React.FC = () => {
               />
             </div>
             
-            {/* Created By Info */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4 inline mr-1" />
@@ -966,7 +1012,6 @@ export const InvoiceForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Totals Summary */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -989,7 +1034,6 @@ export const InvoiceForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Additional Information */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center mb-6">
             <Building className="w-5 h-5 text-gray-400 mr-2" />
@@ -1042,7 +1086,6 @@ export const InvoiceForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Submit Button */}
         <div className="flex justify-end space-x-4">
           <button
             type="button"
