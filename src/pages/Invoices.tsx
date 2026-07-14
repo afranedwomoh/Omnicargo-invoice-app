@@ -304,7 +304,7 @@ export const Invoices: React.FC = () => {
     }
   }
 
-    const handleCopyToClipboard = async (invoice: Invoice) => {
+  const handleCopyToClipboard = async (invoice: Invoice) => {
     setActionLoading(invoice.id)
     
     try {
@@ -327,7 +327,6 @@ export const Invoices: React.FC = () => {
     } finally {
       setActionLoading(null)
     }
-  }
   }
 
   const handleViewInvoice = async (invoice: Invoice) => {
