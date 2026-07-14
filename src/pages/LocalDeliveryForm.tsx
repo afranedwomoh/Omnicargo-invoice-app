@@ -49,8 +49,6 @@ export const LocalDeliveryForm: React.FC = () => {
   const [saving, setSaving] = useState(false)
   const [userProfile, setUserProfile] = useState<{ user_name: string | null }>({ user_name: null })
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([])
-  const [newRouteName, setNewRouteName] = useState('')
-  const [newRoutePrice, setNewRoutePrice] = useState('')
 
   const [formData, setFormData] = useState({
     invoice_number: '',
@@ -121,31 +119,6 @@ export const LocalDeliveryForm: React.FC = () => {
       setSavedRoutes(data || [])
     } catch (error) {
       console.error('Error fetching saved routes:', error)
-    }
-  }
-
-  const addNewRoute = async () => {
-    if (!newRouteName.trim() || !newRoutePrice) {
-      showError('Validation Error', 'Enter both a route name and a price per CBM')
-      return
-    }
-    try {
-      const { error } = await supabase.from('shipment_pricing').insert({
-        user_id: user?.id,
-        shipment_type: newRouteName.trim(),
-        price_per_unit: parseFloat(newRoutePrice),
-        unit_type: 'CBM',
-        currency: 'GHS',
-        is_active: true
-      })
-      if (error) throw error
-      setNewRouteName('')
-      setNewRoutePrice('')
-      fetchSavedRoutes()
-      showSuccess('Saved', 'Route saved for next time')
-    } catch (error) {
-      console.error('Error saving route:', error)
-      showError('Error', 'Failed to save this route')
     }
   }
 
@@ -266,7 +239,13 @@ export const LocalDeliveryForm: React.FC = () => {
       showError('Validation Error', "Please enter the recipient's name")
       return
     }
-    if (items.length === 0) {
+
+    const pendingCbm = typeof currentItem.cbm === 'string' ? parseFloat(currentItem.cbm) || 0 : currentItem.cbm
+    const allItems = currentItem.description.trim() && pendingCbm > 0
+      ? [...items, { ...currentItem, id: Date.now().toString() }]
+      : items
+
+    if (allItems.length === 0) {
       showError('Validation Error', 'Please add at least one delivery item')
       return
     }
@@ -288,14 +267,14 @@ export const LocalDeliveryForm: React.FC = () => {
         })
       }
 
-      const total = calculateTotal()
+      const total = allItems.reduce((sum, item) => sum + item.total, 0)
       const dueDate = format(
         new Date(new Date(formData.issue_date).getTime() + formData.due_date_days * 86400000),
         'yyyy-MM-dd'
       )
 
       const itemRows = (invoiceIdForItems: string) =>
-        items.map(item => ({
+        allItems.map(item => ({
           invoice_id: invoiceIdForItems,
           description: item.description,
           shipment_type: item.route || null,
@@ -511,46 +490,6 @@ export const LocalDeliveryForm: React.FC = () => {
               />
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold text-secondary-900 mb-2">Saved Routes / Rates</h2>
-          <p className="text-xs text-gray-500 mb-3">Save a price per CBM for a route (e.g. "Accra to Kumasi" — ₵700/CBM) to quickly reuse it below.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-            <input
-              type="text"
-              placeholder="Route name (e.g. Accra to Kumasi)"
-              value={newRouteName}
-              onChange={e => setNewRouteName(e.target.value)}
-              className="md:col-span-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-            />
-            <div className="flex gap-2">
-              <input
-                type="number"
-                step="0.01"
-                placeholder="₵ per CBM"
-                value={newRoutePrice}
-                onChange={e => setNewRoutePrice(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-              <button
-                type="button"
-                onClick={addNewRoute}
-                className="flex-shrink-0 bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg px-3 py-2"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          {savedRoutes.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {savedRoutes.map(route => (
-                <span key={route.id} className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                  {route.shipment_type} — ₵{route.price_per_unit}/CBM
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="bg-white rounded-xl shadow p-6">
