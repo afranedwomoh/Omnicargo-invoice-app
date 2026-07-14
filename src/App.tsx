@@ -53,6 +53,16 @@ function App() {
               <InvoiceForm />
             </ProtectedRoute>
           } />
+                    <Route path="/local-delivery/new" element={
+            <ProtectedRoute>
+              <LocalDeliveryForm />
+            </ProtectedRoute>
+          } />
+          <Route path="/local-delivery/edit/:id" element={
+            <ProtectedRoute>
+              <LocalDeliveryForm />
+            </ProtectedRoute>
+          } />
           <Route path="/invoices/edit/:id" element={
             <ProtectedRoute>
               <InvoiceForm />
