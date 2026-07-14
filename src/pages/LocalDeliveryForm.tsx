@@ -54,6 +54,10 @@ export const LocalDeliveryForm: React.FC = () => {
   const [showNewClientForm, setShowNewClientForm] = useState(false)
   const [savingNewClient, setSavingNewClient] = useState(false)
   const [newClient, setNewClient] = useState({ name: '', phone: '', address: '' })
+  const [senderClientId, setSenderClientId] = useState('')
+  const [showNewSenderForm, setShowNewSenderForm] = useState(false)
+  const [savingNewSender, setSavingNewSender] = useState(false)
+  const [newSender, setNewSender] = useState({ name: '', phone: '', address: '' })
 
   const [formData, setFormData] = useState({
     invoice_number: '',
@@ -152,6 +156,60 @@ export const LocalDeliveryForm: React.FC = () => {
         recipient_phone: client.phone || '',
         recipient_address: client.address || ''
       }))
+    }
+  }
+
+  const handleSelectSenderClient = (clientId: string) => {
+    setSenderClientId(clientId)
+    const client = clients.find(c => c.id === clientId)
+    if (client) {
+      setFormData(prev => ({
+        ...prev,
+        sender_name: client.name,
+        sender_phone: client.phone || '',
+        sender_address: client.address || ''
+      }))
+    }
+  }
+
+  const handleSaveNewSender = async () => {
+    if (!newSender.name.trim()) {
+      showError('Validation Error', 'Client name is required')
+      return
+    }
+
+    setSavingNewSender(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert({
+          user_id: user?.id,
+          name: newSender.name.trim(),
+          phone: newSender.phone.trim() || null,
+          address: newSender.address.trim() || null
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setClients(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+      setSenderClientId(data.id)
+      setFormData(prev => ({
+        ...prev,
+        sender_name: data.name,
+        sender_phone: data.phone || '',
+        sender_address: data.address || ''
+      }))
+      setNewSender({ name: '', phone: '', address: '' })
+      setShowNewSenderForm(false)
+      showSuccess('Client Saved', `${data.name} has been saved and selected`)
+    } catch (error) {
+      console.error('Error saving new sender:', error)
+      showError('Error', 'Failed to save this client. Please try again.')
+    } finally {
+      setSavingNewSender(false)
     }
   }
 
@@ -508,33 +566,88 @@ export const LocalDeliveryForm: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <User className="w-5 h-5 text-secondary-900" />
-              <h2 className="text-lg font-semibold text-secondary-900">Sender</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-secondary-900" />
+                <h2 className="text-lg font-semibold text-secondary-900">Sender</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewSenderForm(!showNewSenderForm)}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                {showNewSenderForm ? 'Cancel' : 'New Client'}
+              </button>
             </div>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Sender name"
-                value={formData.sender_name}
-                onChange={e => setFormData({ ...formData, sender_name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Phone number"
-                value={formData.sender_phone}
-                onChange={e => setFormData({ ...formData, sender_phone: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-              <textarea
-                placeholder="Address"
-                value={formData.sender_address}
-                onChange={e => setFormData({ ...formData, sender_address: e.target.value })}
-                rows={2}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
+
+            {showNewSenderForm ? (
+              <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <input
+                  type="text"
+                  placeholder="Client name *"
+                  value={newSender.name}
+                  onChange={e => setNewSender({ ...newSender, name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Phone number"
+                  value={newSender.phone}
+                  onChange={e => setNewSender({ ...newSender, phone: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <textarea
+                  placeholder="Address"
+                  value={newSender.address}
+                  onChange={e => setNewSender({ ...newSender, address: e.target.value })}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveNewSender}
+                  disabled={savingNewSender}
+                  className="w-full bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg px-4 py-2 font-medium disabled:opacity-50"
+                >
+                  {savingNewSender ? 'Saving...' : 'Save & Select Client'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <select
+                  value={senderClientId}
+                  onChange={e => handleSelectSenderClient(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">— Select a saved client —</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>{client.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Sender name"
+                  value={formData.sender_name}
+                  onChange={e => setFormData({ ...formData, sender_name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Phone number"
+                  value={formData.sender_phone}
+                  onChange={e => setFormData({ ...formData, sender_phone: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <textarea
+                  placeholder="Address"
+                  value={formData.sender_address}
+                  onChange={e => setFormData({ ...formData, sender_address: e.target.value })}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-xl shadow p-6">
