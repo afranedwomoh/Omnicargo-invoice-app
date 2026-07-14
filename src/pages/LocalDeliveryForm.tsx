@@ -49,6 +49,11 @@ export const LocalDeliveryForm: React.FC = () => {
   const [saving, setSaving] = useState(false)
   const [userProfile, setUserProfile] = useState<{ user_name: string | null }>({ user_name: null })
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([])
+  const [clients, setClients] = useState<{ id: string; name: string; phone: string | null; address: string | null }[]>([])
+  const [recipientClientId, setRecipientClientId] = useState('')
+  const [showNewClientForm, setShowNewClientForm] = useState(false)
+  const [savingNewClient, setSavingNewClient] = useState(false)
+  const [newClient, setNewClient] = useState({ name: '', phone: '', address: '' })
 
   const [formData, setFormData] = useState({
     invoice_number: '',
@@ -78,6 +83,7 @@ export const LocalDeliveryForm: React.FC = () => {
     if (user) {
       fetchUserProfile()
       fetchSavedRoutes()
+      fetchClients()
       if (isEditing && invoiceId) {
         fetchInvoiceForEdit(invoiceId)
       } else {
@@ -122,6 +128,74 @@ export const LocalDeliveryForm: React.FC = () => {
     }
   }
 
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name, phone, address')
+        .order('name')
+
+      if (error) throw error
+      setClients(data || [])
+    } catch (error) {
+      console.error('Error fetching clients:', error)
+    }
+  }
+
+  const handleSelectRecipientClient = (clientId: string) => {
+    setRecipientClientId(clientId)
+    const client = clients.find(c => c.id === clientId)
+    if (client) {
+      setFormData(prev => ({
+        ...prev,
+        recipient_name: client.name,
+        recipient_phone: client.phone || '',
+        recipient_address: client.address || ''
+      }))
+    }
+  }
+
+  const handleSaveNewClient = async () => {
+    if (!newClient.name.trim()) {
+      showError('Validation Error', 'Client name is required')
+      return
+    }
+
+    setSavingNewClient(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert({
+          user_id: user?.id,
+          name: newClient.name.trim(),
+          phone: newClient.phone.trim() || null,
+          address: newClient.address.trim() || null
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setClients(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+      setRecipientClientId(data.id)
+      setFormData(prev => ({
+        ...prev,
+        recipient_name: data.name,
+        recipient_phone: data.phone || '',
+        recipient_address: data.address || ''
+      }))
+      setNewClient({ name: '', phone: '', address: '' })
+      setShowNewClientForm(false)
+      showSuccess('Client Saved', `${data.name} has been saved and selected`)
+    } catch (error) {
+      console.error('Error saving new client:', error)
+      showError('Error', 'Failed to save this client. Please try again.')
+    } finally {
+      setSavingNewClient(false)
+    }
+  }
+
   const fetchInvoiceForEdit = async (id: string) => {
     try {
       const { data: invoice, error: invoiceError } = await supabase
@@ -144,6 +218,7 @@ export const LocalDeliveryForm: React.FC = () => {
         recipient_address: invoice.recipient_address || '',
         notes: invoice.notes || ''
       })
+      setRecipientClientId(invoice.client_id || '')
 
       const { data: itemsData, error: itemsError } = await supabase
         .from('invoice_items')
@@ -293,6 +368,7 @@ export const LocalDeliveryForm: React.FC = () => {
             issue_date: formData.issue_date,
             due_date: dueDate,
             currency: 'GHS',
+            client_id: recipientClientId || null,
             subtotal: total,
             tax_rate: 0,
             tax_amount: 0,
@@ -325,7 +401,7 @@ export const LocalDeliveryForm: React.FC = () => {
           .from('invoices')
           .insert({
             user_id: user?.id,
-            client_id: null,
+            client_id: recipientClientId || null,
             invoice_type: 'local_delivery',
             invoice_number: formData.invoice_number,
             issue_date: formData.issue_date,
@@ -462,33 +538,88 @@ export const LocalDeliveryForm: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <User className="w-5 h-5 text-primary-500" />
-              <h2 className="text-lg font-semibold text-secondary-900">Recipient</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-primary-500" />
+                <h2 className="text-lg font-semibold text-secondary-900">Recipient</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewClientForm(!showNewClientForm)}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                {showNewClientForm ? 'Cancel' : 'New Client'}
+              </button>
             </div>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Recipient name"
-                value={formData.recipient_name}
-                onChange={e => setFormData({ ...formData, recipient_name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Phone number"
-                value={formData.recipient_phone}
-                onChange={e => setFormData({ ...formData, recipient_phone: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-              <textarea
-                placeholder="Address"
-                value={formData.recipient_address}
-                onChange={e => setFormData({ ...formData, recipient_address: e.target.value })}
-                rows={2}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
+
+            {showNewClientForm ? (
+              <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <input
+                  type="text"
+                  placeholder="Client name *"
+                  value={newClient.name}
+                  onChange={e => setNewClient({ ...newClient, name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Phone number"
+                  value={newClient.phone}
+                  onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <textarea
+                  placeholder="Address"
+                  value={newClient.address}
+                  onChange={e => setNewClient({ ...newClient, address: e.target.value })}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveNewClient}
+                  disabled={savingNewClient}
+                  className="w-full bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg px-4 py-2 font-medium disabled:opacity-50"
+                >
+                  {savingNewClient ? 'Saving...' : 'Save & Select Client'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <select
+                  value={recipientClientId}
+                  onChange={e => handleSelectRecipientClient(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">— Select a saved client —</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>{client.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Recipient name"
+                  value={formData.recipient_name}
+                  onChange={e => setFormData({ ...formData, recipient_name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Phone number"
+                  value={formData.recipient_phone}
+                  onChange={e => setFormData({ ...formData, recipient_phone: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+                <textarea
+                  placeholder="Address"
+                  value={formData.recipient_address}
+                  onChange={e => setFormData({ ...formData, recipient_address: e.target.value })}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            )}
           </div>
         </div>
 
