@@ -17,10 +17,18 @@ import { format } from 'date-fns'
 
 interface DeliveryItem {
   id: string
+  route: string
   description: string
-  quantity: number | string
+  item_quantity: number | string
+  cbm: number | string
   unit_price: number | string
   total: number
+}
+
+interface SavedRoute {
+  id: string
+  shipment_type: string
+  price_per_unit: number
 }
 
 const DUE_DATE_OPTIONS = [
@@ -40,6 +48,9 @@ export const LocalDeliveryForm: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userProfile, setUserProfile] = useState<{ user_name: string | null }>({ user_name: null })
+  const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([])
+  const [newRouteName, setNewRouteName] = useState('')
+  const [newRoutePrice, setNewRoutePrice] = useState('')
 
   const [formData, setFormData] = useState({
     invoice_number: '',
@@ -57,8 +68,10 @@ export const LocalDeliveryForm: React.FC = () => {
   const [items, setItems] = useState<DeliveryItem[]>([])
   const [currentItem, setCurrentItem] = useState<DeliveryItem>({
     id: Date.now().toString(),
+    route: '',
     description: '',
-    quantity: 1,
+    item_quantity: 1,
+    cbm: '',
     unit_price: '',
     total: 0
   })
@@ -66,6 +79,7 @@ export const LocalDeliveryForm: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchUserProfile()
+      fetchSavedRoutes()
       if (isEditing && invoiceId) {
         fetchInvoiceForEdit(invoiceId)
       } else {
@@ -91,6 +105,47 @@ export const LocalDeliveryForm: React.FC = () => {
       if (profile) setUserProfile(profile)
     } catch (error) {
       console.error('Error fetching user profile:', error)
+    }
+  }
+
+  const fetchSavedRoutes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('shipment_pricing')
+        .select('id, shipment_type, price_per_unit')
+        .eq('user_id', user?.id)
+        .eq('is_active', true)
+        .order('shipment_type')
+
+      if (error) throw error
+      setSavedRoutes(data || [])
+    } catch (error) {
+      console.error('Error fetching saved routes:', error)
+    }
+  }
+
+  const addNewRoute = async () => {
+    if (!newRouteName.trim() || !newRoutePrice) {
+      showError('Validation Error', 'Enter both a route name and a price per CBM')
+      return
+    }
+    try {
+      const { error } = await supabase.from('shipment_pricing').insert({
+        user_id: user?.id,
+        shipment_type: newRouteName.trim(),
+        price_per_unit: parseFloat(newRoutePrice),
+        unit_type: 'CBM',
+        currency: 'GHS',
+        is_active: true
+      })
+      if (error) throw error
+      setNewRouteName('')
+      setNewRoutePrice('')
+      fetchSavedRoutes()
+      showSuccess('Saved', 'Route saved for next time')
+    } catch (error) {
+      console.error('Error saving route:', error)
+      showError('Error', 'Failed to save this route')
     }
   }
 
@@ -127,8 +182,10 @@ export const LocalDeliveryForm: React.FC = () => {
       setItems(
         (itemsData || []).map((item: any) => ({
           id: item.id,
+          route: item.shipment_type || '',
           description: item.description,
-          quantity: item.quantity,
+          item_quantity: item.item_quantity || 1,
+          cbm: item.cbm || 0,
           unit_price: item.unit_price,
           total: item.total
         }))
@@ -141,15 +198,25 @@ export const LocalDeliveryForm: React.FC = () => {
     }
   }
 
-  const calculateItemTotal = (quantity: number | string, unitPrice: number | string) => {
-    const qty = typeof quantity === 'string' ? parseFloat(quantity) || 0 : quantity
+  const calculateItemTotal = (cbm: number | string, unitPrice: number | string) => {
+    const cbmVal = typeof cbm === 'string' ? parseFloat(cbm) || 0 : cbm
     const price = typeof unitPrice === 'string' ? parseFloat(unitPrice) || 0 : unitPrice
-    return qty * price
+    return cbmVal * price
   }
 
   const handleCurrentItemChange = (field: keyof DeliveryItem, value: string | number) => {
     const updated = { ...currentItem, [field]: value }
-    updated.total = calculateItemTotal(updated.quantity, updated.unit_price)
+    updated.total = calculateItemTotal(updated.cbm, updated.unit_price)
+    setCurrentItem(updated)
+  }
+
+  const handleRouteSelect = (routeName: string) => {
+    const route = savedRoutes.find(r => r.shipment_type === routeName)
+    const updated = { ...currentItem, route: routeName }
+    if (route) {
+      updated.unit_price = route.price_per_unit
+    }
+    updated.total = calculateItemTotal(updated.cbm, updated.unit_price)
     setCurrentItem(updated)
   }
 
@@ -158,18 +225,20 @@ export const LocalDeliveryForm: React.FC = () => {
       showError('Validation Error', 'Enter a description for this item')
       return
     }
-    const qty = typeof currentItem.quantity === 'string' ? parseFloat(currentItem.quantity) || 0 : currentItem.quantity
-    if (qty <= 0) {
-      showError('Validation Error', 'Quantity must be greater than 0')
+    const cbmVal = typeof currentItem.cbm === 'string' ? parseFloat(currentItem.cbm) || 0 : currentItem.cbm
+    if (cbmVal <= 0) {
+      showError('Validation Error', 'CBM must be greater than 0')
       return
     }
 
     setItems(prev => [...prev, { ...currentItem, id: Date.now().toString() }])
     setCurrentItem({
       id: Date.now().toString(),
+      route: currentItem.route,
       description: '',
-      quantity: 1,
-      unit_price: '',
+      item_quantity: 1,
+      cbm: '',
+      unit_price: currentItem.unit_price,
       total: 0
     })
   }
@@ -225,6 +294,18 @@ export const LocalDeliveryForm: React.FC = () => {
         'yyyy-MM-dd'
       )
 
+      const itemRows = (invoiceIdForItems: string) =>
+        items.map(item => ({
+          invoice_id: invoiceIdForItems,
+          description: item.description,
+          shipment_type: item.route || null,
+          quantity: typeof item.cbm === 'string' ? parseFloat(item.cbm) : item.cbm,
+          item_quantity: typeof item.item_quantity === 'string' ? parseFloat(item.item_quantity) : item.item_quantity,
+          cbm: typeof item.cbm === 'string' ? parseFloat(item.cbm) : item.cbm,
+          unit_price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price,
+          total: item.total
+        }))
+
       if (isEditing && invoiceId) {
         const { error: invoiceError } = await supabase
           .from('invoices')
@@ -255,15 +336,7 @@ export const LocalDeliveryForm: React.FC = () => {
 
         await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId)
 
-        const { error: itemsError } = await supabase.from('invoice_items').insert(
-          items.map(item => ({
-            invoice_id: invoiceId,
-            description: item.description,
-            quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity,
-            unit_price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price,
-            total: item.total
-          }))
-        )
+        const { error: itemsError } = await supabase.from('invoice_items').insert(itemRows(invoiceId))
 
         if (itemsError) throw itemsError
 
@@ -299,15 +372,7 @@ export const LocalDeliveryForm: React.FC = () => {
 
         if (invoiceError) throw invoiceError
 
-        const { error: itemsError } = await supabase.from('invoice_items').insert(
-          items.map(item => ({
-            invoice_id: invoice.id,
-            description: item.description,
-            quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity,
-            unit_price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price,
-            total: item.total
-          }))
-        )
+        const { error: itemsError } = await supabase.from('invoice_items').insert(itemRows(invoice.id))
 
         if (itemsError) throw itemsError
 
@@ -449,19 +514,62 @@ export const LocalDeliveryForm: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="text-lg font-semibold text-secondary-900 mb-2">Saved Routes / Rates</h2>
+          <p className="text-xs text-gray-500 mb-3">Save a price per CBM for a route (e.g. "Accra to Kumasi" — ₵700/CBM) to quickly reuse it below.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <input
+              type="text"
+              placeholder="Route name (e.g. Accra to Kumasi)"
+              value={newRouteName}
+              onChange={e => setNewRouteName(e.target.value)}
+              className="md:col-span-2 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                step="0.01"
+                placeholder="₵ per CBM"
+                value={newRoutePrice}
+                onChange={e => setNewRoutePrice(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+              />
+              <button
+                type="button"
+                onClick={addNewRoute}
+                className="flex-shrink-0 bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg px-3 py-2"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          {savedRoutes.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {savedRoutes.map(route => (
+                <span key={route.id} className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                  {route.shipment_type} — ₵{route.price_per_unit}/CBM
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6">
           <div className="flex items-center gap-2 mb-4">
             <Calculator className="w-5 h-5 text-secondary-900" />
             <h2 className="text-lg font-semibold text-secondary-900">Delivery Items</h2>
           </div>
+          <p className="text-xs text-gray-500 mb-4">Total is calculated as CBM × Price per CBM. The quantity of boxes is for reference only and doesn't affect the price.</p>
 
           {items.length > 0 && (
-            <div className="mb-4 border border-gray-200 rounded-lg overflow-hidden">
+            <div className="mb-4 border border-gray-200 rounded-lg overflow-hidden overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="text-left px-3 py-2">Route</th>
                     <th className="text-left px-3 py-2">Description</th>
                     <th className="text-center px-3 py-2">Qty</th>
-                    <th className="text-right px-3 py-2">Price</th>
+                    <th className="text-center px-3 py-2">CBM</th>
+                    <th className="text-right px-3 py-2">₵/CBM</th>
                     <th className="text-right px-3 py-2">Total</th>
                     <th className="px-3 py-2"></th>
                   </tr>
@@ -469,8 +577,10 @@ export const LocalDeliveryForm: React.FC = () => {
                 <tbody>
                   {items.map(item => (
                     <tr key={item.id} className="border-t border-gray-200">
+                      <td className="px-3 py-2">{item.route || '—'}</td>
                       <td className="px-3 py-2">{item.description}</td>
-                      <td className="px-3 py-2 text-center">{item.quantity}</td>
+                      <td className="px-3 py-2 text-center">{item.item_quantity}</td>
+                      <td className="px-3 py-2 text-center">{Number(item.cbm).toFixed(3)}</td>
                       <td className="px-3 py-2 text-right">₵{Number(item.unit_price).toFixed(2)}</td>
                       <td className="px-3 py-2 text-right font-medium">₵{item.total.toFixed(2)}</td>
                       <td className="px-3 py-2 text-right">
@@ -485,44 +595,74 @@ export const LocalDeliveryForm: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <input
-                type="text"
-                placeholder="e.g. Package delivery to East Legon"
-                value={currentItem.description}
-                onChange={e => handleCurrentItemChange('description', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
+          <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Qty</label>
-              <input
-                type="number"
-                min="1"
-                value={currentItem.quantity}
-                onChange={e => handleCurrentItemChange('quantity', e.target.value)}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quick-fill from saved route</label>
+              <select
+                value={currentItem.route}
+                onChange={e => handleRouteSelect(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
+              >
+                <option value="">— Choose a saved route —</option>
+                {savedRoutes.map(route => (
+                  <option key={route.id} value={route.shipment_type}>
+                    {route.shipment_type} (₵{route.price_per_unit}/CBM)
+                  </option>
+                ))}
+              </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price (₵)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={currentItem.unit_price}
-                onChange={e => handleCurrentItemChange('unit_price', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 3 boxes of clothing"
+                  value={currentItem.description}
+                  onChange={e => handleCurrentItemChange('description', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Qty (boxes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={currentItem.item_quantity}
+                  onChange={e => handleCurrentItemChange('item_quantity', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CBM</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  placeholder="0.500"
+                  value={currentItem.cbm}
+                  onChange={e => handleCurrentItemChange('cbm', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">₵ / CBM</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={currentItem.unit_price}
+                  onChange={e => handleCurrentItemChange('unit_price', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
             </div>
             <button
               type="button"
               onClick={addItem}
-              className="flex items-center justify-center gap-1 bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg px-3 py-2 font-medium"
+              className="w-full md:w-auto flex items-center justify-center gap-1 bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg px-4 py-2 font-medium"
             >
-              <Plus className="w-4 h-4" /> Add
+              <Plus className="w-4 h-4" /> Add Item
             </button>
           </div>
 
