@@ -7,18 +7,18 @@ import {
   Settings,
   Plus,
   TrendingUp,
-  Package
+  Package,
+  Truck
 } from 'lucide-react'
-
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'Clients', href: '/clients', icon: Users },
   { name: 'Analysis', href: '/analysis', icon: TrendingUp },
   { name: 'Shipment Pricing', href: '/shipment-pricing', icon: Package },
+  { name: 'Local Delivery', href: '/local-delivery/new', icon: Truck },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
-
 export const Sidebar: React.FC = () => {
   return (
     <div className="w-64 bg-secondary-900 min-h-screen">
