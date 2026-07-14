@@ -989,13 +989,23 @@ export const shareInvoiceViaWhatsApp = async (invoiceData: InvoiceData, phoneNum
   }
 }
 
-export const copyInvoiceImageToClipboard = async (invoiceData: InvoiceData): Promise<boolean> => {
+// Utility function to copy image to clipboard (for supported browsers)
+export const copyInvoiceImageToClipboard = async (
+  getInvoiceData: () => Promise<InvoiceData>
+): Promise<boolean> => {
   try {
     if (!navigator.clipboard || !window.ClipboardItem) {
-      return false
+      return false // Clipboard API not supported
     }
 
+    // navigator.clipboard.write() must run immediately when this function is
+    // called, with nothing awaited beforehand by the caller either - otherwise
+    // the browser no longer considers this a direct result of the user's tap
+    // and blocks it. Everything slow - fetching the invoice data over the
+    // network, then rendering the image - now happens inside this promise,
+    // which is handed to ClipboardItem without being awaited first.
     const blobPromise: Promise<Blob> = (async () => {
+      const invoiceData = await getInvoiceData()
       const imageDataUrl = await generateInvoiceImage(invoiceData)
       const response = await fetch(imageDataUrl)
       return response.blob()
@@ -1013,6 +1023,7 @@ export const copyInvoiceImageToClipboard = async (invoiceData: InvoiceData): Pro
     return false
   }
 }
+
 
 const getCurrencySymbol = (currency: string): string => {
   switch (currency) {
