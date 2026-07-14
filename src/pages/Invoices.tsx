@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { generateInvoicePDF, shareInvoiceViaWhatsApp, copyInvoiceImageToClipboard } from '../utils/pdfGenerator'
+import { generateInvoicePDF, copyInvoiceImageToClipboard } from '../utils/pdfGenerator'
 import { sendEmailToClient } from '../utils/emailService'
 import { useToast } from '../hooks/useToast'
 import { ToastContainer } from '../components/Toast/ToastContainer'
@@ -23,8 +23,7 @@ import {
   AlertCircle,
   Edit,
   Trash2,
-  MessageCircle,
-  Share,
+  Truck,
   DollarSign,
   Copy
 } from 'lucide-react'
@@ -43,6 +42,7 @@ interface Invoice {
   created_at: string
   currency: string
   user_id: string
+  invoice_type: string
 }
 
 interface InvoiceDetails {
@@ -60,6 +60,12 @@ interface InvoiceDetails {
   notes: string | null
   payment_instructions: string | null
   signature?: string | null
+  invoice_type?: string
+  sender?: {
+    name: string | null
+    phone: string | null
+    address: string | null
+  }
   client: {
     name: string
     email: string | null
@@ -95,7 +101,6 @@ export const Invoices: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   
-  // Modal states
   const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; invoice: InvoiceDetails | null }>({
     isOpen: false,
     invoice: null
@@ -163,7 +168,10 @@ export const Invoices: React.FC = () => {
           created_at,
           currency,
           user_id,
-          clients!inner(name, email, phone)
+          invoice_type,
+          recipient_name,
+          recipient_phone,
+          clients(name, email, phone)
         `)
         .order('created_at', { ascending: false })
 
@@ -172,16 +180,17 @@ export const Invoices: React.FC = () => {
       const formattedInvoices = data?.map(invoice => ({
         id: invoice.id,
         invoice_number: invoice.invoice_number,
-        client_name: (invoice.clients as any)?.name || 'Unknown Client',
+        client_name: (invoice.clients as any)?.name || invoice.recipient_name || 'Unknown Client',
         client_email: (invoice.clients as any)?.email || null,
-        client_phone: (invoice.clients as any)?.phone || null,
+        client_phone: (invoice.clients as any)?.phone || invoice.recipient_phone || null,
         total_amount: invoice.total_amount,
         status: invoice.status as 'draft' | 'sent' | 'paid' | 'overdue',
         issue_date: invoice.issue_date,
         due_date: invoice.due_date,
         created_at: invoice.created_at,
         currency: invoice.currency || 'USD',
-        user_id: invoice.user_id
+        user_id: invoice.user_id,
+        invoice_type: invoice.invoice_type || 'freight'
       })) || []
 
       setInvoices(formattedInvoices)
@@ -195,19 +204,17 @@ export const Invoices: React.FC = () => {
 
   const fetchInvoiceDetails = async (invoiceId: string): Promise<InvoiceDetails | null> => {
     try {
-      // Fetch invoice with client details
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select(`
           *,
-          clients!inner(*)
+          clients(*)
         `)
         .eq('id', invoiceId)
         .single()
 
       if (invoiceError) throw invoiceError
 
-      // Fetch business profile separately using user_id
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -218,7 +225,6 @@ export const Invoices: React.FC = () => {
         throw profileError
       }
 
-      // Fetch invoice items
       const { data: itemsData, error: itemsError } = await supabase
         .from('invoice_items')
         .select('*')
@@ -241,12 +247,18 @@ export const Invoices: React.FC = () => {
         notes: invoiceData.notes,
         payment_instructions: invoiceData.payment_instructions,
         signature: invoiceData.signature,
+        invoice_type: invoiceData.invoice_type || 'freight',
+        sender: {
+          name: invoiceData.sender_name || null,
+          phone: invoiceData.sender_phone || null,
+          address: invoiceData.sender_address || null
+        },
         client: {
-          name: invoiceData.clients.name,
-          email: invoiceData.clients.email,
-          phone: invoiceData.clients.phone,
-          address: invoiceData.clients.address,
-          tax_id: invoiceData.clients.tax_id
+          name: invoiceData.clients?.name || invoiceData.recipient_name || 'Unknown',
+          email: invoiceData.clients?.email || null,
+          phone: invoiceData.clients?.phone || invoiceData.recipient_phone || null,
+          address: invoiceData.clients?.address || invoiceData.recipient_address || null,
+          tax_id: invoiceData.clients?.tax_id || null
         },
         items: itemsData?.map((item: any) => ({
           description: item.description,
@@ -292,7 +304,7 @@ export const Invoices: React.FC = () => {
     }
   }
 
-  const handleShareWhatsApp = async (invoice: Invoice) => {
+  const handleCopyToClipboard = async (invoice: Invoice) => {
     setActionLoading(invoice.id)
     
     try {
@@ -303,27 +315,7 @@ export const Invoices: React.FC = () => {
         return
       }
 
-      await shareInvoiceViaWhatsApp(invoiceDetails, invoice.client_phone || undefined)
-      showSuccess('WhatsApp Ready!', 'Invoice image downloaded. WhatsApp opened with pre-filled message. Please attach the downloaded image.')
-    } catch (error) {
-      console.error('Error sharing invoice via WhatsApp:', error)
-      showError('Error', 'Failed to prepare WhatsApp sharing. Please try again.')
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-    const handleCopyToClipboard = async (invoice: Invoice) => {
-    setActionLoading(invoice.id)
-    
-    try {
-      const success = await copyInvoiceImageToClipboard(async () => {
-        const invoiceDetails = await fetchInvoiceDetails(invoice.id)
-        if (!invoiceDetails) {
-          throw new Error('Failed to load invoice details')
-        }
-        return invoiceDetails
-      })
+      const success = await copyInvoiceImageToClipboard(invoiceDetails)
       
       if (success) {
         showSuccess('Copied!', 'Invoice image copied to clipboard. You can now paste it anywhere.')
@@ -382,21 +374,17 @@ export const Invoices: React.FC = () => {
     if (!emailModal.invoice || !emailModal.invoiceDetails) return
 
     try {
-      // Prepare invoice data for email service with full invoice details
       const invoiceData = {
         invoice_number: emailModal.invoice.invoice_number,
         total_amount: emailModal.invoice.total_amount,
         due_date: emailModal.invoice.due_date,
         currency: emailModal.invoice.currency,
         client_name: emailModal.invoice.client_name,
-        // Pass full invoice details for PDF generation
         ...emailModal.invoiceDetails
       }
 
-      // Send email using the direct email service
       await sendEmailToClient(emailData, invoiceData)
       
-      // Update invoice status to 'sent'
       const { error: updateError } = await supabase
         .from('invoices')
         .update({ 
@@ -407,10 +395,8 @@ export const Invoices: React.FC = () => {
 
       if (updateError) throw updateError
       
-      // Refresh the invoices list
       fetchInvoices()
       
-      // Show success toast
       showSuccess(
         'Email Sent Successfully!', 
         `Invoice ${emailModal.invoice.invoice_number} has been sent to ${emailData.to_email}`
@@ -452,7 +438,7 @@ export const Invoices: React.FC = () => {
           .from('invoices')
           .delete()
           .eq('id', confirmModal.invoice.id)
-          .eq('user_id', user?.id) // Only allow deleting own invoices
+          .eq('user_id', user?.id)
 
         if (error) throw error
         
@@ -465,7 +451,7 @@ export const Invoices: React.FC = () => {
             updated_at: new Date().toISOString()
           })
           .eq('id', confirmModal.invoice.id)
-          .eq('user_id', user?.id) // Only allow updating own invoices
+          .eq('user_id', user?.id)
 
         if (error) throw error
         
@@ -540,7 +526,6 @@ export const Invoices: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Toast Container */}
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       
       <div className="flex items-center justify-between">
@@ -557,7 +542,6 @@ export const Invoices: React.FC = () => {
         </Link>
       </div>
 
-      {/* Filters */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -587,7 +571,6 @@ export const Invoices: React.FC = () => {
         </div>
       </div>
 
-      {/* Invoices List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {filteredInvoices.length === 0 ? (
           <div className="text-center py-12">
@@ -634,7 +617,14 @@ export const Invoices: React.FC = () => {
                       <div className="flex items-center">
                         {getStatusIcon(invoice.status)}
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900">#{invoice.invoice_number}</p>
+                          <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                            #{invoice.invoice_number}
+                            {invoice.invoice_type === 'local_delivery' && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
+                                <Truck className="w-3 h-3" /> Local Delivery
+                              </span>
+                            )}
+                          </p>
                           <p className="text-sm text-gray-500">
                             {format(new Date(invoice.issue_date), 'MMM d, yyyy')}
                           </p>
@@ -693,19 +683,6 @@ export const Invoices: React.FC = () => {
                         </button>
 
                         <button 
-                          onClick={() => handleShareWhatsApp(invoice)}
-                          disabled={actionLoading === invoice.id}
-                          className="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-colors disabled:opacity-50"
-                          title="Share via WhatsApp (Enhanced)"
-                        >
-                          {actionLoading === invoice.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-                          ) : (
-                            <MessageCircle className="w-4 h-4" />
-                          )}
-                        </button>
-
-                        <button 
                           onClick={() => handleCopyToClipboard(invoice)}
                           disabled={actionLoading === invoice.id}
                           className="text-gray-400 hover:text-purple-600 p-2 rounded-lg hover:bg-purple-50 transition-colors disabled:opacity-50"
@@ -738,7 +715,7 @@ export const Invoices: React.FC = () => {
                         
                         {invoice.user_id === user?.id && (
                           <Link
-                            to={`/invoices/edit/${invoice.id}`}
+                            to={invoice.invoice_type === 'local_delivery' ? `/local-delivery/edit/${invoice.id}` : `/invoices/edit/${invoice.id}`}
                             className={`p-2 rounded-lg transition-colors ${
                               invoice.status === 'draft' 
                                 ? 'text-gray-400 hover:text-blue-600 hover:bg-blue-50' 
@@ -775,7 +752,6 @@ export const Invoices: React.FC = () => {
         )}
       </div>
 
-      {/* Modals */}
       <InvoicePreviewModal
         isOpen={previewModal.isOpen}
         onClose={() => setPreviewModal({ isOpen: false, invoice: null })}
