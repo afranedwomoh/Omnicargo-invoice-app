@@ -17,6 +17,12 @@ interface InvoiceData {
   notes: string | null
   payment_instructions: string | null
   signature?: string | null
+  invoice_type?: string
+  sender?: {
+    name: string | null
+    phone: string | null
+    address: string | null
+  }
   client: {
     name: string
     email: string | null
@@ -43,7 +49,182 @@ interface InvoiceData {
   }
 }
 
+const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void> => {
+  const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.width
+  const pageHeight = doc.internal.pageSize.height
+  let yPosition = 15
+
+  const primaryColor = '#FB6600'
+  const secondaryColor = '#022A65'
+  const lightGray = '#F8F9FA'
+  const darkGray = '#374151'
+  const sender = invoiceData.sender || { name: null, phone: null, address: null }
+
+  doc.setFillColor(primaryColor)
+  doc.rect(0, 0, pageWidth, 40, 'F')
+
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor('#FFFFFF')
+  doc.text('OmniCargo Solutions - Local Delivery', 15, 18)
+
+  doc.setFontSize(20)
+  doc.setFont('helvetica', 'bold')
+  doc.text('INVOICE', pageWidth - 50, 18)
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`#${invoiceData.invoice_number}`, pageWidth - 50, 28)
+
+  yPosition = 55
+  doc.setFontSize(9)
+  doc.setTextColor(darkGray)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Invoice Date: ${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}`, 15, yPosition)
+  doc.text(`Due: ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}`, pageWidth - 70, yPosition)
+
+  yPosition += 15
+  const boxWidth = (pageWidth - 30 - 10) / 2
+
+  doc.setFillColor(lightGray)
+  doc.rect(15, yPosition, boxWidth, 35, 'F')
+  doc.rect(15 + boxWidth + 10, yPosition, boxWidth, 35, 'F')
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(secondaryColor)
+  doc.text('SENDER', 19, yPosition + 8)
+  doc.setTextColor(primaryColor)
+  doc.text('RECIPIENT', 19 + boxWidth + 10, yPosition + 8)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(darkGray)
+  doc.setFontSize(9)
+  doc.text(sender.name || '-', 19, yPosition + 15)
+  if (sender.phone) doc.text(sender.phone, 19, yPosition + 21)
+  if (sender.address) doc.text(doc.splitTextToSize(sender.address, boxWidth - 8).slice(0, 2), 19, yPosition + 27)
+
+  doc.text(invoiceData.client.name, 19 + boxWidth + 10, yPosition + 15)
+  if (invoiceData.client.phone) doc.text(invoiceData.client.phone, 19 + boxWidth + 10, yPosition + 21)
+  if (invoiceData.client.address) doc.text(doc.splitTextToSize(invoiceData.client.address, boxWidth - 8).slice(0, 2), 19 + boxWidth + 10, yPosition + 27)
+
+  yPosition += 50
+
+  const tableX = 15
+  const tableWidth = pageWidth - 30
+  const columns = [
+    { label: 'ROUTE', width: tableWidth * 0.22, align: 'left' },
+    { label: 'DESCRIPTION', width: tableWidth * 0.28, align: 'left' },
+    { label: 'QTY', width: tableWidth * 0.1, align: 'center' },
+    { label: 'CBM', width: tableWidth * 0.15, align: 'center' },
+    { label: 'PRICE', width: tableWidth * 0.125, align: 'right' },
+    { label: 'TOTAL', width: tableWidth * 0.125, align: 'right' }
+  ]
+  let colX = tableX
+  const colPositions = columns.map(col => {
+    const pos = { x: colX, width: col.width, align: col.align }
+    colX += col.width
+    return pos
+  })
+
+  doc.setFillColor(secondaryColor)
+  doc.rect(tableX, yPosition, tableWidth, 10, 'F')
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor('#FFFFFF')
+  columns.forEach((col, i) => {
+    const pos = colPositions[i]
+    let textX = pos.x + 2
+    if (col.align === 'center') textX = pos.x + pos.width / 2
+    if (col.align === 'right') textX = pos.x + pos.width - 2
+    doc.text(col.label, textX, yPosition + 7, { align: col.align as any })
+  })
+
+  yPosition += 10
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(darkGray)
+
+  invoiceData.items.forEach((item, index) => {
+    if (index % 2 === 0) {
+      doc.setFillColor('#F9FAFB')
+      doc.rect(tableX, yPosition, tableWidth, 8, 'F')
+    }
+    doc.setFontSize(7)
+    const cbmVal = item.cbm ?? item.quantity
+    const rowData = [
+      item.shipment_type || '-',
+      item.description,
+      String(item.item_quantity ?? '-'),
+      cbmVal.toFixed(3),
+      `₵${item.unit_price.toFixed(2)}`,
+      `₵${item.total.toFixed(2)}`
+    ]
+    rowData.forEach((cell, i) => {
+      const col = columns[i]
+      const pos = colPositions[i]
+      let textX = pos.x + 2
+      if (col.align === 'center') textX = pos.x + pos.width / 2
+      if (col.align === 'right') textX = pos.x + pos.width - 2
+      doc.text(doc.splitTextToSize(cell, pos.width - 4)[0] || cell, textX, yPosition + 5.5, { align: col.align as any })
+    })
+    yPosition += 8
+  })
+
+  doc.setDrawColor('#E5E7EB')
+  doc.rect(tableX, yPosition - (invoiceData.items.length * 8) - 10, tableWidth, (invoiceData.items.length * 8) + 10)
+
+  yPosition += 12
+  doc.setDrawColor(primaryColor)
+  doc.setLineWidth(1)
+  doc.line(pageWidth - 90, yPosition, pageWidth - 15, yPosition)
+  yPosition += 8
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(12)
+  doc.setTextColor(primaryColor)
+  doc.text('TOTAL:', pageWidth - 90, yPosition)
+  doc.text(`₵${invoiceData.total_amount.toFixed(2)}`, pageWidth - 15, yPosition, { align: 'right' })
+
+  yPosition += 15
+  if (invoiceData.signature) {
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(secondaryColor)
+    doc.text('CREATED BY:', 15, yPosition)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(darkGray)
+    doc.setFontSize(9)
+    doc.text(invoiceData.signature, 15, yPosition + 8)
+    yPosition += 15
+  }
+
+  if (invoiceData.notes && yPosition < pageHeight - 30) {
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(secondaryColor)
+    doc.text('NOTES:', 15, yPosition)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(darkGray)
+    doc.setFontSize(7)
+    doc.text(doc.splitTextToSize(invoiceData.notes, pageWidth - 30).slice(0, 3), 15, yPosition + 6)
+  }
+
+  const footerY = pageHeight - 15
+  doc.setFillColor(lightGray)
+  doc.rect(0, footerY - 5, pageWidth, 20, 'F')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(darkGray)
+  doc.text(`Generated on ${format(new Date(), 'MMM dd, yyyy')}`, 15, footerY)
+  doc.text(`Invoice #${invoiceData.invoice_number}`, pageWidth - 60, footerY)
+
+  doc.save(`Invoice-${invoiceData.invoice_number}.pdf`)
+}
+
 export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void> => {
+  if (invoiceData.invoice_type === 'local_delivery') {
+    return generateLocalDeliveryPDF(invoiceData)
+  }
+
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.width
   const pageHeight = doc.internal.pageSize.height
@@ -783,6 +964,10 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
 }
 
 export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<string> => {
+  if (invoiceData.invoice_type === 'local_delivery') {
+    return generateLocalDeliveryImage(invoiceData)
+  }
+
   return new Promise((resolve, reject) => {
     const invoiceDiv = document.createElement('div')
     invoiceDiv.style.position = 'absolute'
@@ -928,6 +1113,143 @@ export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<st
   })
 }
 
+const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const invoiceDiv = document.createElement('div')
+    invoiceDiv.style.position = 'absolute'
+    invoiceDiv.style.left = '-9999px'
+    invoiceDiv.style.width = '800px'
+    invoiceDiv.style.backgroundColor = 'white'
+    invoiceDiv.style.padding = '40px'
+    invoiceDiv.style.fontFamily = 'Arial, sans-serif'
+    invoiceDiv.style.lineHeight = '1.4'
+
+    const sender = invoiceData.sender || { name: null, phone: null, address: null }
+
+    invoiceDiv.innerHTML = `
+      <div style="position: relative; min-height: 900px;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.015; z-index: 0;">
+          <img src="/logoomni-removebg-preview.png" style="width: 120px; height: 120px;" />
+        </div>
+
+        <div style="position: relative; z-index: 1;">
+          <div style="background: #FB6600; color: white; padding: 25px; margin-bottom: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h1 style="margin: 0; font-size: 24px; font-weight: bold;">${invoiceData.business.name || 'OmniCargo Solutions'}</h1>
+                <p style="margin: 6px 0 0 0; font-size: 12px; opacity: 0.9;">LOCAL DELIVERY INVOICE</p>
+              </div>
+              <div style="text-align: right;">
+                <h2 style="margin: 0; font-size: 28px; font-weight: bold;">INVOICE</h2>
+                <p style="margin: 6px 0 0 0; font-size: 16px; font-weight: 500;">#${invoiceData.invoice_number}</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-bottom: 25px; gap: 20px;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 45%;">
+              <p style="margin: 0 0 10px 0; font-size: 13px;"><strong>Invoice Date:</strong> ${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}</p>
+              <p style="margin: 0; font-size: 13px;"><strong>Due:</strong> ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 45%; text-align: right;">
+              <p style="margin: 0; font-size: 13px;"><strong>Status:</strong> <span style="background: ${getStatusColor(invoiceData.status)}; color: white; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">${invoiceData.status.toUpperCase()}</span></p>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 47%;">
+              <h3 style="margin: 0 0 12px 0; color: #022A65; font-size: 13px; font-weight: bold; letter-spacing: 0.05em;">SENDER</h3>
+              <p style="margin: 0; font-weight: bold; font-size: 15px; color: #374151;">${sender.name || '—'}</p>
+              ${sender.phone ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${sender.phone}</p>` : ''}
+              ${sender.address ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${sender.address}</p>` : ''}
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 47%;">
+              <h3 style="margin: 0 0 12px 0; color: #FB6600; font-size: 13px; font-weight: bold; letter-spacing: 0.05em;">RECIPIENT</h3>
+              <p style="margin: 0; font-weight: bold; font-size: 15px; color: #374151;">${invoiceData.client.name}</p>
+              ${invoiceData.client.phone ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${invoiceData.client.phone}</p>` : ''}
+              ${invoiceData.client.address ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${invoiceData.client.address}</p>` : ''}
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: #022A65; color: white;">
+                <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">ROUTE</th>
+                <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">DESCRIPTION</th>
+                <th style="padding: 12px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">QTY</th>
+                <th style="padding: 12px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">CBM</th>
+                <th style="padding: 12px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">₵/CBM</th>
+                <th style="padding: 12px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoiceData.items.map((item, index) => `
+                <tr style="background: ${index % 2 === 0 ? '#f9fafb' : 'white'};">
+                  <td style="padding: 10px 8px; border: 1px solid #ddd; font-size: 11px; color: #374151;">${item.shipment_type || '—'}</td>
+                  <td style="padding: 10px 8px; border: 1px solid #ddd; font-size: 11px; color: #374151;">${item.description}</td>
+                  <td style="padding: 10px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; color: #374151;">${item.item_quantity ?? '—'}</td>
+                  <td style="padding: 10px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; color: #374151;">${(item.cbm ?? item.quantity).toFixed(3)}</td>
+                  <td style="padding: 10px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; color: #374151;">₵${item.unit_price.toFixed(2)}</td>
+                  <td style="padding: 10px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #374151;">₵${item.total.toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; min-width: 280px;">
+              <hr style="margin: 0 0 15px 0; border: 1.5px solid #FB6600;">
+              <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; color: #FB6600;">
+                <span>TOTAL:</span>
+                <span>₵${invoiceData.total_amount.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          ${invoiceData.signature ? `
+            <div style="margin-bottom: 30px;">
+              <h3 style="color: #022A65; margin-bottom: 12px; font-size: 13px; font-weight: bold;">CREATED BY:</h3>
+              <div style="border-bottom: 2px solid #ddd; width: 200px; padding-bottom: 6px;">
+                <p style="margin: 0; font-weight: bold; font-size: 14px; color: #374151;">${invoiceData.signature}</p>
+              </div>
+            </div>
+          ` : ''}
+
+          ${invoiceData.notes ? `
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+              <h3 style="color: #022A65; margin: 0 0 12px 0; font-size: 13px; font-weight: bold;">NOTES:</h3>
+              <p style="margin: 0; line-height: 1.6; color: #374151; font-size: 11px;">${invoiceData.notes}</p>
+            </div>
+          ` : ''}
+
+          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #6B7280; font-size: 10px;">
+            <p style="margin: 0;">Generated on ${format(new Date(), 'MMM dd, yyyy')} | Invoice #${invoiceData.invoice_number}</p>
+          </div>
+        </div>
+      </div>
+    `
+
+    document.body.appendChild(invoiceDiv)
+
+    html2canvas(invoiceDiv, {
+      scale: 2.5,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: 800,
+      height: 900
+    }).then(canvas => {
+      document.body.removeChild(invoiceDiv)
+      const imageDataUrl = canvas.toDataURL('image/png', 0.95)
+      resolve(imageDataUrl)
+    }).catch(error => {
+      document.body.removeChild(invoiceDiv)
+      reject(error)
+    })
+  })
+}
+
 export const shareInvoiceViaWhatsApp = async (invoiceData: InvoiceData, phoneNumber?: string): Promise<void> => {
   try {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -989,21 +1311,28 @@ export const shareInvoiceViaWhatsApp = async (invoiceData: InvoiceData, phoneNum
   }
 }
 
-// Utility function to copy image to clipboard (for supported browsers)
+export const downloadInvoiceImage = async (invoiceData: InvoiceData): Promise<void> => {
+  const imageDataUrl = await generateInvoiceImage(invoiceData)
+  const timestamp = format(new Date(), 'yyyyMMdd-HHmmss')
+  const filename = `Invoice-${invoiceData.invoice_number}-${timestamp}.png`
+
+  const link = document.createElement('a')
+  link.download = filename
+  link.href = imageDataUrl
+  link.style.display = 'none'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 export const copyInvoiceImageToClipboard = async (
   getInvoiceData: () => Promise<InvoiceData>
 ): Promise<boolean> => {
   try {
     if (!navigator.clipboard || !window.ClipboardItem) {
-      return false // Clipboard API not supported
+      return false
     }
 
-    // navigator.clipboard.write() must run immediately when this function is
-    // called, with nothing awaited beforehand by the caller either - otherwise
-    // the browser no longer considers this a direct result of the user's tap
-    // and blocks it. Everything slow - fetching the invoice data over the
-    // network, then rendering the image - now happens inside this promise,
-    // which is handed to ClipboardItem without being awaited first.
     const blobPromise: Promise<Blob> = (async () => {
       const invoiceData = await getInvoiceData()
       const imageDataUrl = await generateInvoiceImage(invoiceData)
@@ -1023,7 +1352,6 @@ export const copyInvoiceImageToClipboard = async (
     return false
   }
 }
-
 
 const getCurrencySymbol = (currency: string): string => {
   switch (currency) {
