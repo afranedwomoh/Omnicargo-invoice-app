@@ -313,18 +313,17 @@ export const Invoices: React.FC = () => {
     }
   }
 
-  const handleCopyToClipboard = async (invoice: Invoice) => {
+    const handleCopyToClipboard = async (invoice: Invoice) => {
     setActionLoading(invoice.id)
     
     try {
-      const invoiceDetails = await fetchInvoiceDetails(invoice.id)
-      
-      if (!invoiceDetails) {
-        showError('Error', 'Failed to load invoice details')
-        return
-      }
-
-      const success = await copyInvoiceImageToClipboard(invoiceDetails)
+      const success = await copyInvoiceImageToClipboard(async () => {
+        const invoiceDetails = await fetchInvoiceDetails(invoice.id)
+        if (!invoiceDetails) {
+          throw new Error('Failed to load invoice details')
+        }
+        return invoiceDetails
+      })
       
       if (success) {
         showSuccess('Copied!', 'Invoice image copied to clipboard. You can now paste it anywhere.')
