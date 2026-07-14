@@ -74,29 +74,24 @@ export const Dashboard: React.FC = () => {
 
   const fetchGlobalDashboardData = async () => {
     try {
-      // Fetch ALL invoices from ALL users (global statistics)
       const { data: allInvoices, error: invoicesError } = await supabase
         .from('invoices')
         .select('total_amount, status, currency')
-        // NO user_id filter - get data from all users
 
       if (invoicesError) {
         console.error('Error fetching global invoices:', invoicesError)
         throw invoicesError
       }
 
-      // Fetch ALL clients from ALL users (global count)
       const { count: allClientsCount, error: clientsError } = await supabase
         .from('clients')
         .select('*', { count: 'exact', head: true })
-        // NO user_id filter - get count from all users
 
       if (clientsError) {
         console.error('Error fetching global clients count:', clientsError)
         throw clientsError
       }
 
-      // Fetch recent invoices from ALL users with user info
       const { data: recentInvoicesData, error: recentError } = await supabase
         .from('invoices')
         .select(`
@@ -106,19 +101,18 @@ export const Dashboard: React.FC = () => {
           status,
           due_date,
           currency,
-          clients!inner(name),
+          clients(name),
+          recipient_name,
           profiles!inner(user_name)
         `)
-        // NO user_id filter - get recent invoices from all users
         .order('created_at', { ascending: false })
-        .limit(8) // Show more recent invoices since it's global
+        .limit(8)
 
       if (recentError) {
         console.error('Error fetching global recent invoices:', recentError)
         throw recentError
       }
 
-      // Calculate GLOBAL statistics (all users combined)
       const globalInvoices = allInvoices || []
       const totalRevenue = globalInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0)
       const pendingInvoices = globalInvoices.filter(invoice => invoice.status === 'sent').length
@@ -131,11 +125,10 @@ export const Dashboard: React.FC = () => {
         pendingInvoices: pendingInvoices + overdueInvoices
       })
 
-      // Format recent invoices with user information
       const formattedRecentInvoices = recentInvoicesData?.map(invoice => ({
         id: invoice.id,
         invoice_number: invoice.invoice_number,
-        client_name: (invoice.clients as any)?.name || 'Unknown Client',
+        client_name: (invoice.clients as any)?.name || (invoice as any).recipient_name || 'Unknown Client',
         total_amount: invoice.total_amount,
         status: invoice.status,
         due_date: invoice.due_date,
@@ -155,7 +148,6 @@ export const Dashboard: React.FC = () => {
 
     } catch (error) {
       console.error('Error fetching global dashboard data:', error)
-      // Set empty state on error
       setStats({
         totalInvoices: 0,
         totalRevenue: 0,
@@ -220,7 +212,6 @@ export const Dashboard: React.FC = () => {
         </h1>
       </div>
 
-      {/* Global Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link 
           to="/invoices" 
@@ -285,7 +276,6 @@ export const Dashboard: React.FC = () => {
         </Link>
       </div>
 
-      {/* Recent Invoices - Global Activity */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
