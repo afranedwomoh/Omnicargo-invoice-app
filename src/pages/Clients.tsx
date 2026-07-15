@@ -80,7 +80,6 @@ export const Clients: React.FC = () => {
       const { data, error } = await supabase
         .from('clients')
         .select('*')
-        .eq('user_id', user?.id)
         .order('name')
 
       if (error) throw error
