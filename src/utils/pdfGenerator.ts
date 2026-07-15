@@ -55,8 +55,8 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
   const pageHeight = doc.internal.pageSize.height
   let yPosition = 15
 
-  const primaryColor = '#FB6600'
-  const secondaryColor = '#022A65'
+  const primaryColor = '#F26B1D'
+  const secondaryColor = '#0B2545'
   const lightGray = '#F8F9FA'
   const darkGray = '#374151'
   const sender = invoiceData.sender || { name: null, phone: null, address: null }
@@ -230,8 +230,8 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
   const pageHeight = doc.internal.pageSize.height
   let yPosition = 15
 
-  const primaryColor = '#FB6600'
-  const secondaryColor = '#022A65'
+  const primaryColor = '#F26B1D'
+  const secondaryColor = '#0B2545'
   const lightGray = '#F8F9FA'
   const darkGray = '#374151'
 
@@ -600,8 +600,8 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   const pageHeight = doc.internal.pageSize.height
   let yPosition = 15
 
-  const primaryColor = '#FB6600'
-  const secondaryColor = '#022A65'
+  const primaryColor = '#F26B1D'
+  const secondaryColor = '#0B2545'
   const lightGray = '#F8F9FA'
   const darkGray = '#374151'
 
@@ -973,121 +973,129 @@ export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<st
     invoiceDiv.style.position = 'absolute'
     invoiceDiv.style.left = '-9999px'
     invoiceDiv.style.width = '800px'
-    invoiceDiv.style.backgroundColor = 'white'
-    invoiceDiv.style.padding = '40px'
+    invoiceDiv.style.backgroundColor = '#dcdde0'
+    invoiceDiv.style.padding = '24px'
     invoiceDiv.style.fontFamily = 'Arial, sans-serif'
     invoiceDiv.style.lineHeight = '1.4'
 
+    const navy = '#0B2545'
+    const orange = '#F26B1D'
+
     invoiceDiv.innerHTML = `
-      <div style="position: relative; min-height: 1000px;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.015; z-index: 0;">
-          <img src="/logoomni-removebg-preview.png" style="width: 120px; height: 120px;" />
+      <div style="background: white;">
+        <div style="height: 50px; position: relative; overflow: hidden; background: linear-gradient(115deg, #FDBA8C 0%, #FFEFE3 60%, #FFFFFF 100%);">
+          <div style="position: absolute; top:0; left:0; width: 52%; height: 100%; background: ${navy}; clip-path: polygon(0 0, 100% 0, 68% 100%, 0 100%);"></div>
         </div>
-        
-        <div style="position: relative; z-index: 1;">
-          <div style="background: #FB6600; color: white; padding: 25px; margin-bottom: 30px; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h1 style="margin: 0; font-size: 26px; font-weight: bold;">${invoiceData.business.name || 'OmniCargo Solutions'}</h1>
-                <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">${invoiceData.business.address || ''}</p>
-                <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">${invoiceData.business.phone || ''} | ${invoiceData.business.email || ''}</p>
+
+        <div style="padding: 32px 44px 0 44px;">
+          <div style="display: flex; align-items: stretch; margin-bottom: 24px;">
+            <div style="flex: 1; padding-right: 24px;">
+              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
+                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
+                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
+                </svg>
+                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
               </div>
-              <div style="text-align: right;">
-                <h2 style="margin: 0; font-size: 32px; font-weight: bold;">INVOICE</h2>
-                <p style="margin: 8px 0 0 0; font-size: 18px; font-weight: 500;">#${invoiceData.invoice_number}</p>
+              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
+
+              <div style="margin-top: 24px; font-size: 11px; color: #475467;">
+                ${invoiceData.business.address ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${invoiceData.business.address}</span></div>` : ''}
+                ${invoiceData.business.phone ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.81.35 1.6.68 2.34a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.74-1.25a2 2 0 012.11-.45c.74.33 1.53.56 2.34.68A2 2 0 0122 16.92z"/></svg><span>${invoiceData.business.phone}</span></div>` : ''}
+                ${invoiceData.business.email ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg><span>${invoiceData.business.email}</span></div>` : ''}
+              </div>
+            </div>
+
+            <div style="width: 1px; background: #D0D5DD; margin: 3px 18px;"></div>
+
+            <div style="flex: 1; padding-left: 4px;">
+              <h1 style="font-size: 32px; font-weight: 800; color: ${navy}; letter-spacing: 0.01em; margin: 0;">INVOICE</h1>
+              <div style="width: 36px; height: 3px; background: ${orange}; margin: 5px 0 10px 0;"></div>
+              <p style="font-size: 11px; font-weight: 600; color: ${orange}; margin-bottom: 14px;">#${invoiceData.invoice_number}</p>
+
+              <div style="background: #F7F5F2; border-radius: 6px; padding: 14px 16px; position: relative;">
+                <span style="position: absolute; top: 12px; right: 14px; background: ${navy}; color: white; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; padding: 4px 11px; border-radius: 12px;">${invoiceData.status.toUpperCase()}</span>
+                <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin: 0 0 2px 0;">Invoice Date:</p>
+                <p style="font-size: 12px; color: #344054; margin: 0 0 8px 0;">${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}</p>
+                <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin: 0 0 2px 0;">ETA:</p>
+                <p style="font-size: 12px; color: #344054; margin: 0;">${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}</p>
               </div>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; margin-bottom: 35px; gap: 20px;">
-            <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; width: 45%;">
-              <h3 style="margin: 0 0 18px 0; color: #022A65; font-size: 16px; font-weight: bold;">BILL TO:</h3>
-              <p style="margin: 0; font-weight: bold; font-size: 18px; color: #374151;">${invoiceData.client.name}</p>
-              ${invoiceData.client.address ? `<p style="margin: 8px 0; color: #6B7280; line-height: 1.5;">${invoiceData.client.address}</p>` : ''}
-              ${invoiceData.client.email ? `<p style="margin: 6px 0; color: #6B7280;">${invoiceData.client.email}</p>` : ''}
-              ${invoiceData.client.phone ? `<p style="margin: 6px 0; color: #6B7280;">${invoiceData.client.phone}</p>` : ''}
-            </div>
-            <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; width: 45%;">
-              <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>Invoice Date:</strong> ${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}</p>
-              <p style="margin: 0 0 12px 0; font-size: 14px;"><strong>ETA:</strong> ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}</p>
-              <p style="margin: 0; font-size: 14px;"><strong>Status:</strong> <span style="background: ${getStatusColor(invoiceData.status)}; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold;">${invoiceData.status.toUpperCase()}</span></p>
-            </div>
+          <span style="display: inline-block; background: ${navy}; color: white; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; padding: 7px 16px; border-radius: 4px;">BILL TO</span>
+          <div style="background: #F7F5F2; border-radius: 6px; padding: 16px 18px; margin-top: 8px;">
+            <p style="font-size: 14px; font-weight: 700; color: ${navy}; margin: 0 0 4px 0;">${invoiceData.client.name}</p>
+            ${invoiceData.client.address ? `<p style="font-size: 12px; color: #475467; margin: 0;">${invoiceData.client.address}</p>` : ''}
+            ${invoiceData.client.phone ? `<p style="font-size: 12px; color: #475467; margin: 0;">${invoiceData.client.phone}</p>` : ''}
           </div>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 35px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <table style="width: 100%; border-collapse: collapse; margin: 24px 0 16px 0;">
             <thead>
-              <tr style="background: #022A65; color: white;">
-                <th style="padding: 15px 8px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; width: 20%;">SHIPMENT TYPE</th>
-                <th style="padding: 15px 8px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold; width: 30%;">DESCRIPTION</th>
-                <th style="padding: 15px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; font-weight: bold; width: 8%;">QTY</th>
-                <th style="padding: 15px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; font-weight: bold; width: 12%;">CBM</th>
-                <th style="padding: 15px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold; width: 15%;">PRICE</th>
-                <th style="padding: 15px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold; width: 15%;">AMOUNT</th>
+              <tr style="background: ${navy};">
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: left;">Shipment Type</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: left;">Description</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">Qty</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">CBM</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">Price</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">Amount</th>
               </tr>
             </thead>
             <tbody>
-              ${invoiceData.items.map((item, index) => {
+              ${invoiceData.items.map((item) => {
                 const parts = item.description.split(': ')
                 const shipmentType = parts.length > 1 ? parts[0] : (item.shipment_type || 'N/A')
                 const description = parts.length > 1 ? parts[1] : item.description
                 const totalCBM = item.quantity
                 const individualQty = item.item_quantity || 1
                 const individualCBM = item.cbm || (totalCBM / individualQty)
-                
+
                 return `
-                  <tr style="background: ${index % 2 === 0 ? '#f9fafb' : 'white'};">
-                    <td style="padding: 12px 8px; border: 1px solid #ddd; font-size: 10px; color: #374151; width: 20%;">${shipmentType}</td>
-                    <td style="padding: 12px 8px; border: 1px solid #ddd; font-size: 10px; color: #374151; width: 30%;">${description}</td>
-                    <td style="padding: 12px 8px; text-align: center; border: 1px solid #ddd; font-size: 10px; color: #374151; width: 8%;">${individualQty}</td>
-                    <td style="padding: 12px 8px; text-align: center; border: 1px solid #ddd; font-size: 10px; color: #374151; width: 12%;">${individualCBM.toFixed(3)}</td>
-                    <td style="padding: 12px 8px; text-align: right; border: 1px solid #ddd; font-size: 10px; color: #374151; width: 15%;">${getCurrencySymbol(invoiceData.currency)}${item.unit_price.toFixed(2)}</td>
-                    <td style="padding: 12px 8px; text-align: right; border: 1px solid #ddd; font-size: 10px; font-weight: bold; color: #374151; width: 15%;">${getCurrencySymbol(invoiceData.currency)}${item.total.toFixed(2)}</td>
+                  <tr>
+                    <td style="padding: 12px; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${shipmentType}</td>
+                    <td style="padding: 12px; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${description}</td>
+                    <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${individualQty}</td>
+                    <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${individualCBM.toFixed(3)}</td>
+                    <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${getCurrencySymbol(invoiceData.currency)}${item.unit_price.toFixed(2)}</td>
+                    <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${getCurrencySymbol(invoiceData.currency)}${item.total.toFixed(2)}</td>
                   </tr>
                 `
               }).join('')}
             </tbody>
           </table>
 
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 35px;">
-            <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; min-width: 320px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px;">
-                <span style="color: #6B7280;">Subtotal:</span>
-                <span style="font-weight: 500; color: #374151;">${getCurrencySymbol(invoiceData.currency)}${invoiceData.subtotal.toFixed(2)}</span>
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 26px;">
+            <div style="border: 1px solid #EAECF0; border-radius: 6px; padding: 16px 20px; min-width: 260px;">
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: #344054; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #EAECF0;">
+                <span>Subtotal:</span><span>${getCurrencySymbol(invoiceData.currency)}${invoiceData.subtotal.toFixed(2)}</span>
               </div>
               ${invoiceData.discount_amount > 0 ? `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #ef4444; font-size: 14px;">
-                  <span>Discount:</span>
-                  <span style="font-weight: 500;">-${getCurrencySymbol(invoiceData.currency)}${invoiceData.discount_amount.toFixed(2)}</span>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #ef4444; padding-bottom: 10px; margin-bottom: 10px;">
+                  <span>Discount:</span><span>-${getCurrencySymbol(invoiceData.currency)}${invoiceData.discount_amount.toFixed(2)}</span>
                 </div>
               ` : ''}
-              <hr style="margin: 18px 0; border: 1.5px solid #FB6600;">
-              <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 20px; color: #FB6600;">
-                <span>TOTAL:</span>
-                <span>${getCurrencySymbol(invoiceData.currency)}${invoiceData.total_amount.toFixed(2)}</span>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 14px; font-weight: 700; color: ${orange};">TOTAL:</span>
+                <span style="font-size: 18px; font-weight: 700; color: ${orange};">${getCurrencySymbol(invoiceData.currency)}${invoiceData.total_amount.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           ${invoiceData.signature ? `
-            <div style="margin-bottom: 35px;">
-              <h3 style="color: #022A65; margin-bottom: 15px; font-size: 14px; font-weight: bold;">CREATED BY:</h3>
-              <div style="border-bottom: 2px solid #ddd; width: 220px; padding-bottom: 8px;">
-                <p style="margin: 0; font-weight: bold; font-size: 16px; color: #374151;">${invoiceData.signature}</p>
-              </div>
-              <p style="margin: 8px 0 0 0; font-size: 11px; color: #6B7280;">Authorized Representative</p>
-            </div>
+            <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin-bottom: 12px;">CREATED BY:</p>
+            <div style="width: 230px; border-bottom: 1px solid #D0D5DD; margin-bottom: 7px;"></div>
+            <p style="font-size: 12px; color: #344054; margin-bottom: 22px;">${invoiceData.signature}</p>
           ` : ''}
 
           ${(invoiceData.notes || invoiceData.payment_instructions) ? `
-            <div style="background: #f8f9fa; padding: 25px; border-radius: 8px;">
-              <h3 style="color: #022A65; margin: 0 0 18px 0; font-size: 14px; font-weight: bold;">NOTES & TERMS AND CONDITIONS:</h3>
-              <p style="margin: 0; line-height: 1.6; color: #374151; font-size: 12px;">${[invoiceData.notes, invoiceData.payment_instructions].filter(Boolean).join('\n\n')}</p>
-            </div>
+            <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin-bottom: 7px;">NOTES:</p>
+            <p style="font-size: 10px; color: #667085; line-height: 1.7; margin: 0 0 26px 0;">${[invoiceData.notes, invoiceData.payment_instructions].filter(Boolean).join('<br><br>')}</p>
           ` : ''}
+        </div>
 
-          <div style="text-align: center; margin-top: 45px; padding-top: 25px; border-top: 1px solid #ddd; color: #6B7280; font-size: 11px;">
-            <p style="margin: 0;">Generated on ${format(new Date(), 'MMM dd, yyyy')} | Invoice #${invoiceData.invoice_number}</p>
-          </div>
+        <div style="display: flex; justify-content: space-between; padding: 14px 44px; background: #F7F5F2; border-top: 2px solid ${orange}; font-size: 10px; color: #667085;">
+          <span>Generated on ${format(new Date(), 'MMM dd, yyyy')}</span>
+          <span>Invoice #${invoiceData.invoice_number}</span>
         </div>
       </div>
     `
@@ -1098,10 +1106,9 @@ export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<st
       scale: 2.5,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: '#ffffff',
+      backgroundColor: '#dcdde0',
       logging: false,
-      width: 800,
-      height: 1000
+      width: 800
     }).then(canvas => {
       document.body.removeChild(invoiceDiv)
       const imageDataUrl = canvas.toDataURL('image/png', 0.95)
@@ -1119,112 +1126,120 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
     invoiceDiv.style.position = 'absolute'
     invoiceDiv.style.left = '-9999px'
     invoiceDiv.style.width = '800px'
-    invoiceDiv.style.backgroundColor = 'white'
-    invoiceDiv.style.padding = '40px'
+    invoiceDiv.style.backgroundColor = '#dcdde0'
+    invoiceDiv.style.padding = '24px'
     invoiceDiv.style.fontFamily = 'Arial, sans-serif'
     invoiceDiv.style.lineHeight = '1.4'
 
+    const navy = '#0B2545'
+    const orange = '#F26B1D'
     const sender = invoiceData.sender || { name: null, phone: null, address: null }
 
     invoiceDiv.innerHTML = `
-      <div style="position: relative; min-height: 900px;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.015; z-index: 0;">
-          <img src="/logoomni-removebg-preview.png" style="width: 120px; height: 120px;" />
+      <div style="background: white;">
+        <div style="height: 50px; position: relative; overflow: hidden; background: linear-gradient(115deg, #FDBA8C 0%, #FFEFE3 60%, #FFFFFF 100%);">
+          <div style="position: absolute; top:0; left:0; width: 52%; height: 100%; background: ${navy}; clip-path: polygon(0 0, 100% 0, 68% 100%, 0 100%);"></div>
         </div>
 
-        <div style="position: relative; z-index: 1;">
-          <div style="background: #FB6600; color: white; padding: 25px; margin-bottom: 30px; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h1 style="margin: 0; font-size: 24px; font-weight: bold;">${invoiceData.business.name || 'OmniCargo Solutions'}</h1>
-                <p style="margin: 6px 0 0 0; font-size: 12px; opacity: 0.9;">LOCAL DELIVERY INVOICE</p>
+        <div style="padding: 32px 44px 0 44px;">
+          <div style="display: flex; align-items: stretch; margin-bottom: 20px;">
+            <div style="flex: 1; padding-right: 24px;">
+              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
+                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
+                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
+                </svg>
+                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
               </div>
-              <div style="text-align: right;">
-                <h2 style="margin: 0; font-size: 28px; font-weight: bold;">INVOICE</h2>
-                <p style="margin: 6px 0 0 0; font-size: 16px; font-weight: 500;">#${invoiceData.invoice_number}</p>
+              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
+              <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 18px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
+            </div>
+
+            <div style="width: 1px; background: #D0D5DD; margin: 3px 18px;"></div>
+
+            <div style="flex: 1; padding-left: 4px;">
+              <h1 style="font-size: 32px; font-weight: 800; color: ${navy}; letter-spacing: 0.01em; margin: 0;">INVOICE</h1>
+              <div style="width: 36px; height: 3px; background: ${orange}; margin: 5px 0 10px 0;"></div>
+              <p style="font-size: 11px; font-weight: 600; color: ${orange}; margin-bottom: 14px;">#${invoiceData.invoice_number}</p>
+
+              <div style="background: #F7F5F2; border-radius: 6px; padding: 14px 16px; position: relative;">
+                <span style="position: absolute; top: 12px; right: 14px; background: ${navy}; color: white; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; padding: 4px 11px; border-radius: 12px;">${invoiceData.status.toUpperCase()}</span>
+                <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin: 0 0 2px 0;">Invoice Date:</p>
+                <p style="font-size: 12px; color: #344054; margin: 0 0 8px 0;">${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}</p>
+                <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin: 0 0 2px 0;">ETA:</p>
+                <p style="font-size: 12px; color: #344054; margin: 0;">${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}</p>
               </div>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; margin-bottom: 25px; gap: 20px;">
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 45%;">
-              <p style="margin: 0 0 10px 0; font-size: 13px;"><strong>Invoice Date:</strong> ${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}</p>
-              <p style="margin: 0; font-size: 13px;"><strong>ETA:</strong> ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}</p>
+          <div style="display: flex; gap: 16px; margin-bottom: 20px;">
+            <div style="flex: 1;">
+              <span style="display: inline-block; background: ${navy}; color: white; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; padding: 7px 16px; border-radius: 4px;">SENDER</span>
+              <div style="background: #F7F5F2; border-radius: 6px; padding: 16px 18px; margin-top: 8px;">
+                <p style="font-size: 14px; font-weight: 700; color: ${navy}; margin: 0 0 4px 0;">${sender.name || '&mdash;'}</p>
+                ${sender.phone ? `<p style="font-size: 12px; color: #475467; margin: 0;">${sender.phone}</p>` : ''}
+                ${sender.address ? `<p style="font-size: 12px; color: #475467; margin: 0;">${sender.address}</p>` : ''}
+              </div>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 45%; text-align: right;">
-              <p style="margin: 0; font-size: 13px;"><strong>Status:</strong> <span style="background: ${getStatusColor(invoiceData.status)}; color: white; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">${invoiceData.status.toUpperCase()}</span></p>
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px;">
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 47%;">
-              <h3 style="margin: 0 0 12px 0; color: #022A65; font-size: 13px; font-weight: bold; letter-spacing: 0.05em;">SENDER</h3>
-              <p style="margin: 0; font-weight: bold; font-size: 15px; color: #374151;">${sender.name || '—'}</p>
-              ${sender.phone ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${sender.phone}</p>` : ''}
-              ${sender.address ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${sender.address}</p>` : ''}
-            </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 47%;">
-              <h3 style="margin: 0 0 12px 0; color: #FB6600; font-size: 13px; font-weight: bold; letter-spacing: 0.05em;">RECIPIENT</h3>
-              <p style="margin: 0; font-weight: bold; font-size: 15px; color: #374151;">${invoiceData.client.name}</p>
-              ${invoiceData.client.phone ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${invoiceData.client.phone}</p>` : ''}
-              ${invoiceData.client.address ? `<p style="margin: 6px 0 0 0; color: #6B7280; font-size: 12px;">${invoiceData.client.address}</p>` : ''}
+            <div style="flex: 1;">
+              <span style="display: inline-block; background: ${orange}; color: white; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; padding: 7px 16px; border-radius: 4px;">RECIPIENT</span>
+              <div style="background: #F7F5F2; border-radius: 6px; padding: 16px 18px; margin-top: 8px;">
+                <p style="font-size: 14px; font-weight: 700; color: ${navy}; margin: 0 0 4px 0;">${invoiceData.client.name}</p>
+                ${invoiceData.client.phone ? `<p style="font-size: 12px; color: #475467; margin: 0;">${invoiceData.client.phone}</p>` : ''}
+                ${invoiceData.client.address ? `<p style="font-size: 12px; color: #475467; margin: 0;">${invoiceData.client.address}</p>` : ''}
+              </div>
             </div>
           </div>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <table style="width: 100%; border-collapse: collapse; margin: 8px 0 16px 0;">
             <thead>
-              <tr style="background: #022A65; color: white;">
-                <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">ROUTE</th>
-                <th style="padding: 12px 8px; text-align: left; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">DESCRIPTION</th>
-                <th style="padding: 12px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">QTY</th>
-                <th style="padding: 12px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">CBM</th>
-                <th style="padding: 12px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">₵/CBM</th>
-                <th style="padding: 12px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold;">TOTAL</th>
+              <tr style="background: ${navy};">
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: left;">Route</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: left;">Description</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">Qty</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">CBM</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">&cent;/CBM</th>
+                <th style="color: white; font-size: 10px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 11px 12px; text-align: center;">Total</th>
               </tr>
             </thead>
             <tbody>
-              ${invoiceData.items.map((item, index) => `
-                <tr style="background: ${index % 2 === 0 ? '#f9fafb' : 'white'};">
-                  <td style="padding: 10px 8px; border: 1px solid #ddd; font-size: 11px; color: #374151;">${item.shipment_type || '—'}</td>
-                  <td style="padding: 10px 8px; border: 1px solid #ddd; font-size: 11px; color: #374151;">${item.description}</td>
-                  <td style="padding: 10px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; color: #374151;">${item.item_quantity ?? '—'}</td>
-                  <td style="padding: 10px 8px; text-align: center; border: 1px solid #ddd; font-size: 11px; color: #374151;">${(item.cbm ?? item.quantity).toFixed(3)}</td>
-                  <td style="padding: 10px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; color: #374151;">₵${item.unit_price.toFixed(2)}</td>
-                  <td style="padding: 10px 8px; text-align: right; border: 1px solid #ddd; font-size: 11px; font-weight: bold; color: #374151;">₵${item.total.toFixed(2)}</td>
+              ${invoiceData.items.map((item) => `
+                <tr>
+                  <td style="padding: 12px; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${item.shipment_type || '&mdash;'}</td>
+                  <td style="padding: 12px; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${item.description}</td>
+                  <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${item.item_quantity ?? '&mdash;'}</td>
+                  <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">${(item.cbm ?? item.quantity).toFixed(3)}</td>
+                  <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">&#8373;${item.unit_price.toFixed(2)}</td>
+                  <td style="padding: 12px; text-align: center; font-size: 11px; color: #344054; border-bottom: 1px solid #EAECF0;">&#8373;${item.total.toFixed(2)}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
 
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; min-width: 280px;">
-              <hr style="margin: 0 0 15px 0; border: 1.5px solid #FB6600;">
-              <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; color: #FB6600;">
-                <span>TOTAL:</span>
-                <span>₵${invoiceData.total_amount.toFixed(2)}</span>
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 26px;">
+            <div style="border: 1px solid #EAECF0; border-radius: 6px; padding: 16px 20px; min-width: 260px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 14px; font-weight: 700; color: ${orange};">TOTAL:</span>
+                <span style="font-size: 18px; font-weight: 700; color: ${orange};">&#8373;${invoiceData.total_amount.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           ${invoiceData.signature ? `
-            <div style="margin-bottom: 30px;">
-              <h3 style="color: #022A65; margin-bottom: 12px; font-size: 13px; font-weight: bold;">CREATED BY:</h3>
-              <div style="border-bottom: 2px solid #ddd; width: 200px; padding-bottom: 6px;">
-                <p style="margin: 0; font-weight: bold; font-size: 14px; color: #374151;">${invoiceData.signature}</p>
-              </div>
-            </div>
+            <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin-bottom: 12px;">CREATED BY:</p>
+            <div style="width: 230px; border-bottom: 1px solid #D0D5DD; margin-bottom: 7px;"></div>
+            <p style="font-size: 12px; color: #344054; margin-bottom: 22px;">${invoiceData.signature}</p>
           ` : ''}
 
           ${invoiceData.notes ? `
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-              <h3 style="color: #022A65; margin: 0 0 12px 0; font-size: 13px; font-weight: bold;">NOTES:</h3>
-              <p style="margin: 0; line-height: 1.6; color: #374151; font-size: 11px;">${invoiceData.notes}</p>
-            </div>
+            <p style="font-size: 11px; font-weight: 700; color: ${navy}; margin-bottom: 7px;">NOTES:</p>
+            <p style="font-size: 10px; color: #667085; line-height: 1.7; margin: 0 0 26px 0;">${invoiceData.notes}</p>
           ` : ''}
+        </div>
 
-          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #6B7280; font-size: 10px;">
-            <p style="margin: 0;">Generated on ${format(new Date(), 'MMM dd, yyyy')} | Invoice #${invoiceData.invoice_number}</p>
-          </div>
+        <div style="display: flex; justify-content: space-between; padding: 14px 44px; background: #F7F5F2; border-top: 2px solid ${orange}; font-size: 10px; color: #667085;">
+          <span>Generated on ${format(new Date(), 'MMM dd, yyyy')}</span>
+          <span>Invoice #${invoiceData.invoice_number}</span>
         </div>
       </div>
     `
@@ -1235,10 +1250,9 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
       scale: 2.5,
       useCORS: true,
       allowTaint: true,
-      backgroundColor: '#ffffff',
+      backgroundColor: '#dcdde0',
       logging: false,
-      width: 800,
-      height: 900
+      width: 800
     }).then(canvas => {
       document.body.removeChild(invoiceDiv)
       const imageDataUrl = canvas.toDataURL('image/png', 0.95)
@@ -1250,6 +1264,7 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
   })
 }
 
+// Simplified WhatsApp sharing with direct image sharing
 export const shareInvoiceViaWhatsApp = async (invoiceData: InvoiceData, phoneNumber?: string): Promise<void> => {
   try {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -1311,6 +1326,9 @@ export const shareInvoiceViaWhatsApp = async (invoiceData: InvoiceData, phoneNum
   }
 }
 
+// Generates the invoice image and triggers its download. Kept separate from
+// opening WhatsApp so the WhatsApp chat can be opened immediately (using data
+// already on hand), while this slower step runs alongside it in the background.
 export const downloadInvoiceImage = async (invoiceData: InvoiceData): Promise<void> => {
   const imageDataUrl = await generateInvoiceImage(invoiceData)
   const timestamp = format(new Date(), 'yyyyMMdd-HHmmss')
@@ -1325,6 +1343,7 @@ export const downloadInvoiceImage = async (invoiceData: InvoiceData): Promise<vo
   document.body.removeChild(link)
 }
 
+// Utility function to copy image to clipboard (for supported browsers)
 export const copyInvoiceImageToClipboard = async (
   getInvoiceData: () => Promise<InvoiceData>
 ): Promise<boolean> => {
