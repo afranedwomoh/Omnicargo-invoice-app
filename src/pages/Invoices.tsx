@@ -217,12 +217,16 @@ export const Invoices: React.FC = () => {
 
       if (invoiceError) throw invoiceError
 
-      // Fetch the shared business profile (whichever profile has the
-      // company details filled in, not necessarily this invoice's creator)
+      // Fetch the shared business profile (whichever profile has ALL the
+      // company details filled in — name, address, phone, email — rather
+      // than whichever invoice creator's, or any partially-filled row)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .not('business_name', 'is', null)
+        .not('address', 'is', null)
+        .not('contact_phone', 'is', null)
+        .not('contact_email', 'is', null)
         .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle()
