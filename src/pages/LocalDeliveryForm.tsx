@@ -32,9 +32,9 @@ interface SavedRoute {
 }
 
 const DUE_DATE_OPTIONS = [
-  { label: 'Same day', days: 0 },
-  { label: '1 day', days: 1 },
+  { label: '2 days', days: 2 },
   { label: '3 days', days: 3 },
+  { label: '5 days', days: 5 },
   { label: '7 days', days: 7 }
 ]
 
@@ -62,7 +62,7 @@ export const LocalDeliveryForm: React.FC = () => {
   const [formData, setFormData] = useState({
     invoice_number: '',
     issue_date: format(new Date(), 'yyyy-MM-dd'),
-    due_date_days: 0,
+    due_date_days: 3,
     sender_name: '',
     sender_phone: '',
     sender_address: '',
@@ -267,7 +267,7 @@ export const LocalDeliveryForm: React.FC = () => {
       setFormData({
         invoice_number: invoice.invoice_number,
         issue_date: invoice.issue_date,
-        due_date_days: 0,
+        due_date_days: 3,
         sender_name: invoice.sender_name || '',
         sender_phone: invoice.sender_phone || '',
         sender_address: invoice.sender_address || '',
@@ -549,7 +549,7 @@ export const LocalDeliveryForm: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ETA</label>
               <select
                 value={formData.due_date_days}
                 onChange={e => setFormData({ ...formData, due_date_days: parseInt(e.target.value) })}
@@ -559,6 +559,9 @@ export const LocalDeliveryForm: React.FC = () => {
                   <option key={opt.days} value={opt.days}>{opt.label}</option>
                 ))}
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                ETA: {format(new Date(new Date(formData.issue_date).getTime() + formData.due_date_days * 86400000), 'MMM dd, yyyy')}
+              </p>
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">Currency is fixed to Ghanaian Cedis (₵) for local delivery invoices.</p>
