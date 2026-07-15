@@ -61,7 +61,6 @@ export const ShipmentPricing: React.FC = () => {
       const { data, error } = await supabase
         .from('shipment_pricing')
         .select('*')
-        .eq('user_id', user?.id)
         .eq('is_active', true)
         .order('weight_range_min')
 
