@@ -121,7 +121,6 @@ export const LocalDeliveryForm: React.FC = () => {
       const { data, error } = await supabase
         .from('shipment_pricing')
         .select('id, shipment_type, price_per_unit')
-        .eq('user_id', user?.id)
         .eq('is_active', true)
         .order('shipment_type')
 
@@ -373,6 +372,8 @@ export const LocalDeliveryForm: React.FC = () => {
       return
     }
 
+    // If the current item row has valid data but wasn't explicitly added,
+    // include it automatically rather than forcing a separate tap first.
     const pendingCbm = typeof currentItem.cbm === 'string' ? parseFloat(currentItem.cbm) || 0 : currentItem.cbm
     const allItems = currentItem.description.trim() && pendingCbm > 0
       ? [...items, { ...currentItem, id: Date.now().toString() }]
@@ -443,7 +444,6 @@ export const LocalDeliveryForm: React.FC = () => {
             updated_at: new Date().toISOString()
           })
           .eq('id', invoiceId)
-          .eq('user_id', user?.id)
 
         if (invoiceError) throw invoiceError
 
