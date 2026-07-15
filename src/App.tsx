@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AuthContainer } from './components/Auth/AuthContainer'
+import { MfaGate } from './components/Auth/MfaGate'
 import { ResetPasswordForm } from './components/Auth/ResetPasswordForm'
 import { Layout } from './components/Layout/Layout'
 import { Dashboard } from './pages/Dashboard'
@@ -28,7 +29,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <AuthContainer />
   }
 
-  return <Layout>{children}</Layout>
+  return (
+    <MfaGate>
+      <Layout>{children}</Layout>
+    </MfaGate>
+  )
 }
 
 function App() {
@@ -53,7 +58,7 @@ function App() {
               <InvoiceForm />
             </ProtectedRoute>
           } />
-                    <Route path="/local-delivery/new" element={
+          <Route path="/local-delivery/new" element={
             <ProtectedRoute>
               <LocalDeliveryForm />
             </ProtectedRoute>
