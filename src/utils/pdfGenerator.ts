@@ -990,14 +990,11 @@ export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<st
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 24px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
-                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
-                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
-                </svg>
-                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <img src="/omnicargo-mark.png" alt="OmniCargo" style="height: 46px; width: auto; display: block;" />
+                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
               </div>
-              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
+              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 56px; font-weight: 500;">SOLUTIONS LIMITED</p>
 
               <div style="margin-top: 24px; font-size: 11px; color: #475467;">
                 ${invoiceData.business.address ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${invoiceData.business.address}</span></div>` : ''}
@@ -1144,15 +1141,18 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 20px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
-                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
-                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
-                </svg>
-                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <img src="/omnicargo-mark.png" alt="OmniCargo" style="height: 46px; width: auto; display: block;" />
+                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
               </div>
-              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
+              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 56px; font-weight: 500;">SOLUTIONS LIMITED</p>
               <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 18px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
+
+              <div style="margin-top: 12px; font-size: 11px; color: #475467;">
+                ${invoiceData.business.address ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${invoiceData.business.address}</span></div>` : ''}
+                ${invoiceData.business.phone ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.81.35 1.6.68 2.34a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.74-1.25a2 2 0 012.11-.45c.74.33 1.53.56 2.34.68A2 2 0 0122 16.92z"/></svg><span>${invoiceData.business.phone}</span></div>` : ''}
+                ${invoiceData.business.email ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg><span>${invoiceData.business.email}</span></div>` : ''}
+              </div>
             </div>
 
             <div style="width: 1px; background: #D0D5DD; margin: 3px 18px;"></div>
