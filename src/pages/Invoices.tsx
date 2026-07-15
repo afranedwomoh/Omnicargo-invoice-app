@@ -101,6 +101,7 @@ export const Invoices: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   
+  // Modal states
   const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; invoice: InvoiceDetails | null }>({
     isOpen: false,
     invoice: null
@@ -204,6 +205,7 @@ export const Invoices: React.FC = () => {
 
   const fetchInvoiceDetails = async (invoiceId: string): Promise<InvoiceDetails | null> => {
     try {
+      // Fetch invoice with client details
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select(`
@@ -215,16 +217,21 @@ export const Invoices: React.FC = () => {
 
       if (invoiceError) throw invoiceError
 
+      // Fetch the shared business profile (whichever profile has the
+      // company details filled in, not necessarily this invoice's creator)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', invoiceData.user_id)
+        .not('business_name', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(1)
         .maybeSingle()
 
       if (profileError && profileError.code !== 'PGRST116') {
         throw profileError
       }
 
+      // Fetch invoice items
       const { data: itemsData, error: itemsError } = await supabase
         .from('invoice_items')
         .select('*')
@@ -373,17 +380,21 @@ export const Invoices: React.FC = () => {
     if (!emailModal.invoice || !emailModal.invoiceDetails) return
 
     try {
+      // Prepare invoice data for email service with full invoice details
       const invoiceData = {
         invoice_number: emailModal.invoice.invoice_number,
         total_amount: emailModal.invoice.total_amount,
         due_date: emailModal.invoice.due_date,
         currency: emailModal.invoice.currency,
         client_name: emailModal.invoice.client_name,
+        // Pass full invoice details for PDF generation
         ...emailModal.invoiceDetails
       }
 
+      // Send email using the direct email service
       await sendEmailToClient(emailData, invoiceData)
       
+      // Update invoice status to 'sent'
       const { error: updateError } = await supabase
         .from('invoices')
         .update({ 
@@ -394,8 +405,10 @@ export const Invoices: React.FC = () => {
 
       if (updateError) throw updateError
       
+      // Refresh the invoices list
       fetchInvoices()
       
+      // Show success toast
       showSuccess(
         'Email Sent Successfully!', 
         `Invoice ${emailModal.invoice.invoice_number} has been sent to ${emailData.to_email}`
@@ -437,7 +450,6 @@ export const Invoices: React.FC = () => {
           .from('invoices')
           .delete()
           .eq('id', confirmModal.invoice.id)
-          .eq('user_id', user?.id)
 
         if (error) throw error
         
@@ -450,7 +462,6 @@ export const Invoices: React.FC = () => {
             updated_at: new Date().toISOString()
           })
           .eq('id', confirmModal.invoice.id)
-          .eq('user_id', user?.id)
 
         if (error) throw error
         
@@ -525,6 +536,7 @@ export const Invoices: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Toast Container */}
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       
       <div className="flex items-center justify-between">
@@ -541,6 +553,7 @@ export const Invoices: React.FC = () => {
         </Link>
       </div>
 
+      {/* Filters */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -570,6 +583,7 @@ export const Invoices: React.FC = () => {
         </div>
       </div>
 
+      {/* Invoices List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {filteredInvoices.length === 0 ? (
           <div className="text-center py-12">
@@ -702,7 +716,7 @@ export const Invoices: React.FC = () => {
                           <Send className="w-4 h-4" />
                         </button>
                         
-                        {invoice.status !== 'paid' && invoice.user_id === user?.id && (
+                        {invoice.status !== 'paid' && (
                           <button 
                             onClick={() => handleMarkAsPaid(invoice)}
                             className="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-colors"
@@ -712,35 +726,31 @@ export const Invoices: React.FC = () => {
                           </button>
                         )}
                         
-                        {invoice.user_id === user?.id && (
-                          <Link
-                            to={invoice.invoice_type === 'local_delivery' ? `/local-delivery/edit/${invoice.id}` : `/invoices/edit/${invoice.id}`}
-                            className={`p-2 rounded-lg transition-colors ${
-                              invoice.status === 'draft' 
-                                ? 'text-gray-400 hover:text-blue-600 hover:bg-blue-50' 
-                                : 'text-gray-300 cursor-not-allowed'
-                            }`}
-                            title="Edit Invoice"
-                            onClick={(e) => {
-                              if (invoice.status !== 'draft') {
-                                e.preventDefault()
-                                showInfo('Edit Restricted', 'Only draft invoices can be edited')
-                              }
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Link>
-                        )}
+                        <Link
+                          to={invoice.invoice_type === 'local_delivery' ? `/local-delivery/edit/${invoice.id}` : `/invoices/edit/${invoice.id}`}
+                          className={`p-2 rounded-lg transition-colors ${
+                            invoice.status === 'draft' 
+                              ? 'text-gray-400 hover:text-blue-600 hover:bg-blue-50' 
+                              : 'text-gray-300 cursor-not-allowed'
+                          }`}
+                          title="Edit Invoice"
+                          onClick={(e) => {
+                            if (invoice.status !== 'draft') {
+                              e.preventDefault()
+                              showInfo('Edit Restricted', 'Only draft invoices can be edited')
+                            }
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Link>
                         
-                        {invoice.user_id === user?.id && (
-                          <button 
-                            onClick={() => handleDeleteInvoice(invoice)}
-                            className="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                            title="Delete Invoice"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button 
+                          onClick={() => handleDeleteInvoice(invoice)}
+                          className="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                          title="Delete Invoice"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -751,6 +761,7 @@ export const Invoices: React.FC = () => {
         )}
       </div>
 
+      {/* Modals */}
       <InvoicePreviewModal
         isOpen={previewModal.isOpen}
         onClose={() => setPreviewModal({ isOpen: false, invoice: null })}
