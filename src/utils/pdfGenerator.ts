@@ -81,7 +81,7 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
   doc.setTextColor(darkGray)
   doc.setFont('helvetica', 'normal')
   doc.text(`Invoice Date: ${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}`, 15, yPosition)
-  doc.text(`Due: ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}`, pageWidth - 70, yPosition)
+  doc.text(`ETA: ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}`, pageWidth - 70, yPosition)
 
   yPosition += 15
   const boxWidth = (pageWidth - 30 - 10) / 2
@@ -1149,7 +1149,7 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
           <div style="display: flex; justify-content: space-between; margin-bottom: 25px; gap: 20px;">
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 45%;">
               <p style="margin: 0 0 10px 0; font-size: 13px;"><strong>Invoice Date:</strong> ${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}</p>
-              <p style="margin: 0; font-size: 13px;"><strong>Due:</strong> ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}</p>
+              <p style="margin: 0; font-size: 13px;"><strong>ETA:</strong> ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}</p>
             </div>
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; width: 45%; text-align: right;">
               <p style="margin: 0; font-size: 13px;"><strong>Status:</strong> <span style="background: ${getStatusColor(invoiceData.status)}; color: white; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold;">${invoiceData.status.toUpperCase()}</span></p>
