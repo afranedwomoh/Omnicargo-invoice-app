@@ -1352,9 +1352,9 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
               <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 12px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
 
               <div style="margin-top: 16px; font-size: 11px; color: #475467;">
-                ${invoiceData.business.address ? `<div style="margin-bottom: 6px;">${invoiceData.business.address}</div>` : ''}
-                ${invoiceData.business.phone ? `<div style="margin-bottom: 6px;">${invoiceData.business.phone}</div>` : ''}
-                ${invoiceData.business.email ? `<div style="margin-bottom: 6px;">${invoiceData.business.email}</div>` : ''}
+                ${invoiceData.business.address ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${invoiceData.business.address}</span></div>` : ''}
+                ${invoiceData.business.phone ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.81.35 1.6.68 2.34a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.74-1.25a2 2 0 012.11-.45c.74.33 1.53.56 2.34.68A2 2 0 0122 16.92z"/></svg><span>${invoiceData.business.phone}</span></div>` : ''}
+                ${invoiceData.business.email ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg><span>${invoiceData.business.email}</span></div>` : ''}
               </div>
             </div>
 
