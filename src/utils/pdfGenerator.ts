@@ -1196,8 +1196,9 @@ export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<st
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 24px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="margin-bottom: 6px;">
-                <img src="/omnicargo-logo.png" style="height: 52px; max-width: 220px; object-fit: contain; display: block;" onerror="this.style.display='none'" />
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <img src="/omnicargo-mark.png" alt="" style="height: 48px; width: auto; display: block;" />
+                <img src="/omnicargo-wordmark.png" alt="OmniCargo Solutions Limited" style="height: 58px; width: auto; display: block;" />
               </div>
 
               <div style="margin-top: 24px; font-size: 11px; color: #475467;">
@@ -1346,8 +1347,9 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 20px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="margin-bottom: 6px;">
-                <img src="/omnicargo-logo.png" style="height: 52px; max-width: 220px; object-fit: contain; display: block;" onerror="this.style.display='none'" />
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <img src="/omnicargo-mark.png" alt="" style="height: 48px; width: auto; display: block;" />
+                <img src="/omnicargo-wordmark.png" alt="OmniCargo Solutions Limited" style="height: 58px; width: auto; display: block;" />
               </div>
               <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 12px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
 
