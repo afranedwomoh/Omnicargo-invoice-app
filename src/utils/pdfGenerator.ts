@@ -49,66 +49,111 @@ interface InvoiceData {
   }
 }
 
+const drawLogoMark = (doc: jsPDF, x: number, y: number, navy: string, orange: string) => {
+  doc.setFillColor(orange)
+  doc.circle(x, y, 3, 'F')
+  doc.setFillColor(navy)
+  doc.circle(x + 6.5, y, 4, 'F')
+  doc.setFillColor('#FFFFFF')
+  doc.circle(x + 6.5, y, 2.3, 'F')
+  doc.rect(x + 6.5, y - 4, 4.2, 8, 'F')
+}
+
+const drawInvoiceBanner = (doc: jsPDF, pageWidth: number, navy: string) => {
+  doc.setFillColor('#FFEFE3')
+  doc.rect(0, 0, pageWidth, 14, 'F')
+  doc.setFillColor(navy)
+  doc.rect(0, 0, pageWidth * 0.5, 14, 'F')
+}
+
 const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void> => {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.width
   const pageHeight = doc.internal.pageSize.height
   let yPosition = 15
 
-  const primaryColor = '#F26B1D'
-  const secondaryColor = '#0B2545'
-  const lightGray = '#F8F9FA'
+  const navy = '#0B2545'
+  const orange = '#F26B1D'
+  const cream = '#F7F5F2'
   const darkGray = '#374151'
+  const slate = '#667085'
   const sender = invoiceData.sender || { name: null, phone: null, address: null }
 
-  doc.setFillColor(primaryColor)
-  doc.rect(0, 0, pageWidth, 40, 'F')
+  drawInvoiceBanner(doc, pageWidth, navy)
 
-  doc.setFontSize(16)
+  drawLogoMark(doc, 22, 26, navy, orange)
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor('#FFFFFF')
-  doc.text('OmniCargo Solutions - Local Delivery', 15, 18)
+  doc.setTextColor(orange)
+  doc.text('OMNi', 30, 28)
+  const omniWidth = doc.getTextWidth('OMNi')
+  doc.setTextColor(navy)
+  doc.text('CARGO', 30 + omniWidth, 28)
+  doc.setFontSize(6)
+  doc.setFont('helvetica', 'normal')
+  doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  doc.setTextColor(slate)
+  doc.text('LOCAL DELIVERY INVOICE', 30, 39)
 
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
-  doc.text('INVOICE', pageWidth - 50, 18)
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`#${invoiceData.invoice_number}`, pageWidth - 50, 28)
-
-  yPosition = 55
-  doc.setFontSize(9)
-  doc.setTextColor(darkGray)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Invoice Date: ${format(new Date(invoiceData.issue_date), 'MMM dd, yyyy')}`, 15, yPosition)
-  doc.text(`ETA: ${format(new Date(invoiceData.due_date), 'MMM dd, yyyy')}`, pageWidth - 70, yPosition)
-
-  yPosition += 15
-  const boxWidth = (pageWidth - 30 - 10) / 2
-
-  doc.setFillColor(lightGray)
-  doc.rect(15, yPosition, boxWidth, 35, 'F')
-  doc.rect(15 + boxWidth + 10, yPosition, boxWidth, 35, 'F')
-
+  doc.setTextColor(navy)
+  doc.text('INVOICE', pageWidth - 15, 26, { align: 'right' })
+  doc.setDrawColor(orange)
+  doc.setLineWidth(1.2)
+  doc.line(pageWidth - 33, 29, pageWidth - 15, 29)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(secondaryColor)
-  doc.text('SENDER', 19, yPosition + 8)
-  doc.setTextColor(primaryColor)
-  doc.text('RECIPIENT', 19 + boxWidth + 10, yPosition + 8)
+  doc.setTextColor(orange)
+  doc.text(`#${invoiceData.invoice_number}`, pageWidth - 15, 35, { align: 'right' })
+
+  doc.setFillColor(cream)
+  doc.roundedRect(pageWidth - 65, 40, 50, 22, 2, 2, 'F')
+  doc.setFillColor(navy)
+  doc.roundedRect(pageWidth - 32, 42, 14, 5, 2, 2, 'F')
+  doc.setFontSize(6)
+  doc.setTextColor('#FFFFFF')
+  doc.setFont('helvetica', 'bold')
+  doc.text(invoiceData.status.toUpperCase(), pageWidth - 25, 45.3, { align: 'center' })
+  doc.setFontSize(7)
+  doc.setTextColor(navy)
+  doc.text('Invoice Date:', pageWidth - 62, 50)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(darkGray)
+  doc.text(format(new Date(invoiceData.issue_date), 'MMM dd, yyyy'), pageWidth - 62, 54)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(navy)
+  doc.text('ETA:', pageWidth - 62, 58)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(darkGray)
+  doc.text(format(new Date(invoiceData.due_date), 'MMM dd, yyyy'), pageWidth - 62, 60)
+
+  yPosition = 68
+  const boxWidth = (pageWidth - 30 - 8) / 2
+
+  doc.setFillColor(cream)
+  doc.roundedRect(15, yPosition, boxWidth, 26, 2, 2, 'F')
+  doc.roundedRect(15 + boxWidth + 8, yPosition, boxWidth, 26, 2, 2, 'F')
+
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(navy)
+  doc.text('SENDER', 19, yPosition + 6)
+  doc.setTextColor(orange)
+  doc.text('RECIPIENT', 19 + boxWidth + 8, yPosition + 6)
 
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(darkGray)
-  doc.setFontSize(9)
-  doc.text(sender.name || '-', 19, yPosition + 15)
-  if (sender.phone) doc.text(sender.phone, 19, yPosition + 21)
-  if (sender.address) doc.text(doc.splitTextToSize(sender.address, boxWidth - 8).slice(0, 2), 19, yPosition + 27)
+  doc.setFontSize(8)
+  doc.text(sender.name || '-', 19, yPosition + 12)
+  if (sender.phone) doc.text(sender.phone, 19, yPosition + 17)
+  if (sender.address) doc.text(doc.splitTextToSize(sender.address, boxWidth - 8).slice(0, 2), 19, yPosition + 22)
 
-  doc.text(invoiceData.client.name, 19 + boxWidth + 10, yPosition + 15)
-  if (invoiceData.client.phone) doc.text(invoiceData.client.phone, 19 + boxWidth + 10, yPosition + 21)
-  if (invoiceData.client.address) doc.text(doc.splitTextToSize(invoiceData.client.address, boxWidth - 8).slice(0, 2), 19 + boxWidth + 10, yPosition + 27)
+  doc.text(invoiceData.client.name, 19 + boxWidth + 8, yPosition + 12)
+  if (invoiceData.client.phone) doc.text(invoiceData.client.phone, 19 + boxWidth + 8, yPosition + 17)
+  if (invoiceData.client.address) doc.text(doc.splitTextToSize(invoiceData.client.address, boxWidth - 8).slice(0, 2), 19 + boxWidth + 8, yPosition + 22)
 
-  yPosition += 50
+  yPosition += 34
 
   const tableX = 15
   const tableWidth = pageWidth - 30
@@ -127,9 +172,9 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
     return pos
   })
 
-  doc.setFillColor(secondaryColor)
-  doc.rect(tableX, yPosition, tableWidth, 10, 'F')
-  doc.setFontSize(8)
+  doc.setFillColor(navy)
+  doc.rect(tableX, yPosition, tableWidth, 9, 'F')
+  doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor('#FFFFFF')
   columns.forEach((col, i) => {
@@ -137,10 +182,10 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
     let textX = pos.x + 2
     if (col.align === 'center') textX = pos.x + pos.width / 2
     if (col.align === 'right') textX = pos.x + pos.width - 2
-    doc.text(col.label, textX, yPosition + 7, { align: col.align as any })
+    doc.text(col.label, textX, yPosition + 6, { align: col.align as any })
   })
 
-  yPosition += 10
+  yPosition += 9
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(darkGray)
 
@@ -171,24 +216,23 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
   })
 
   doc.setDrawColor('#E5E7EB')
-  doc.rect(tableX, yPosition - (invoiceData.items.length * 8) - 10, tableWidth, (invoiceData.items.length * 8) + 10)
+  doc.rect(tableX, yPosition - (invoiceData.items.length * 8) - 9, tableWidth, (invoiceData.items.length * 8) + 9)
 
-  yPosition += 12
-  doc.setDrawColor(primaryColor)
-  doc.setLineWidth(1)
-  doc.line(pageWidth - 90, yPosition, pageWidth - 15, yPosition)
-  yPosition += 8
+  yPosition += 10
+  doc.setDrawColor('#EAECF0')
+  doc.setLineWidth(0.4)
+  doc.roundedRect(pageWidth - 80, yPosition - 3, 65, 16, 2, 2)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.setTextColor(primaryColor)
-  doc.text('TOTAL:', pageWidth - 90, yPosition)
-  doc.text(`₵${invoiceData.total_amount.toFixed(2)}`, pageWidth - 15, yPosition, { align: 'right' })
+  doc.setFontSize(11)
+  doc.setTextColor(orange)
+  doc.text('TOTAL:', pageWidth - 76, yPosition + 6)
+  doc.text(`₵${invoiceData.total_amount.toFixed(2)}`, pageWidth - 18, yPosition + 6, { align: 'right' })
 
-  yPosition += 15
+  yPosition += 22
   if (invoiceData.signature) {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(secondaryColor)
+    doc.setTextColor(navy)
     doc.text('CREATED BY:', 15, yPosition)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(darkGray)
@@ -200,7 +244,7 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
   if (invoiceData.notes && yPosition < pageHeight - 30) {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(secondaryColor)
+    doc.setTextColor(navy)
     doc.text('NOTES:', 15, yPosition)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(darkGray)
@@ -209,11 +253,14 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
   }
 
   const footerY = pageHeight - 15
-  doc.setFillColor(lightGray)
-  doc.rect(0, footerY - 5, pageWidth, 20, 'F')
+  doc.setFillColor(cream)
+  doc.rect(0, footerY - 6, pageWidth, 21, 'F')
+  doc.setDrawColor(orange)
+  doc.setLineWidth(1)
+  doc.line(0, footerY - 6, pageWidth, footerY - 6)
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(darkGray)
+  doc.setTextColor(slate)
   doc.text(`Generated on ${format(new Date(), 'MMM dd, yyyy')}`, 15, footerY)
   doc.text(`Invoice #${invoiceData.invoice_number}`, pageWidth - 60, footerY)
 
@@ -230,167 +277,127 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
   const pageHeight = doc.internal.pageSize.height
   let yPosition = 15
 
-  const primaryColor = '#F26B1D'
-  const secondaryColor = '#0B2545'
-  const lightGray = '#F8F9FA'
+  const navy = '#0B2545'
+  const orange = '#F26B1D'
+  const cream = '#F7F5F2'
   const darkGray = '#374151'
+  const slate = '#667085'
 
-  const addWatermark = async () => {
-    try {
-      const logoUrl = '/logoomni-removebg-preview.png'
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      
-      return new Promise<void>((resolve) => {
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d')
-          
-          if (ctx) {
-            const watermarkWidth = 40
-            const watermarkHeight = 40
-            const x = (pageWidth - watermarkWidth) / 2
-            const y = (pageHeight - watermarkHeight) / 2 + 10
-            
-            canvas.width = watermarkWidth
-            canvas.height = watermarkHeight
-            
-            ctx.globalAlpha = 0.01
-            ctx.drawImage(img, 0, 0, watermarkWidth, watermarkHeight)
-            
-            const dataUrl = canvas.toDataURL('image/png')
-            doc.addImage(dataUrl, 'PNG', x, y, watermarkWidth, watermarkHeight)
-          }
-          resolve()
-        }
-        img.onerror = () => resolve()
-        img.src = logoUrl
-      })
-    } catch (error) {
-      console.error('Error adding watermark:', error)
-    }
-  }
+  drawInvoiceBanner(doc, pageWidth, navy)
 
-  await addWatermark()
-
-  doc.setFillColor(primaryColor)
-  doc.rect(0, 0, pageWidth, 45, 'F')
-
-  const companyInfoX = 15
-  let companyInfoY = 15
-
-  doc.setFontSize(16)
+  drawLogoMark(doc, 22, 26, navy, orange)
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor('#FFFFFF')
-  doc.text(invoiceData.business.name || 'OmniCargo Solutions', companyInfoX, companyInfoY)
-  companyInfoY += 7
-
-  doc.setFontSize(8)
+  doc.setTextColor(orange)
+  doc.text('OMNi', 30, 28)
+  const omniWidth = doc.getTextWidth('OMNi')
+  doc.setTextColor(navy)
+  doc.text('CARGO', 30 + omniWidth, 28)
+  doc.setFontSize(6)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor('#FFFFFF')
-  
+  doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+
+  doc.setTextColor(slate)
+  doc.setFontSize(7)
+  let contactY = 40
   if (invoiceData.business.address) {
-    const addressLines = doc.splitTextToSize(invoiceData.business.address, 70)
-    doc.text(addressLines.slice(0, 1), companyInfoX, companyInfoY)
-    companyInfoY += 4
+    const addressLines = doc.splitTextToSize(invoiceData.business.address, 90)
+    doc.text(addressLines.slice(0, 1), 22, contactY)
+    contactY += 4.5
   }
-  
   if (invoiceData.business.phone) {
-    doc.text(`${invoiceData.business.phone}`, companyInfoX, companyInfoY)
-    companyInfoY += 4
+    doc.text(invoiceData.business.phone, 22, contactY)
+    contactY += 4.5
   }
-  
   if (invoiceData.business.email) {
-    doc.text(`${invoiceData.business.email}`, companyInfoX, companyInfoY)
+    doc.text(invoiceData.business.email, 22, contactY)
   }
 
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor('#FFFFFF')
-  doc.text('INVOICE', pageWidth - 50, 20)
-  
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`#${invoiceData.invoice_number}`, pageWidth - 50, 30)
-
-  doc.setFillColor(lightGray)
-  doc.rect(pageWidth - 70, 50, 65, 30, 'F')
-  
-  doc.setFontSize(8)
-  doc.setTextColor(darkGray)
+  doc.setTextColor(navy)
+  doc.text('INVOICE', pageWidth - 15, 26, { align: 'right' })
+  doc.setDrawColor(orange)
+  doc.setLineWidth(1.2)
+  doc.line(pageWidth - 33, 29, pageWidth - 15, 29)
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('Invoice Date:', pageWidth - 65, 58)
-  doc.setFont('helvetica', 'normal')
-  doc.text(format(new Date(invoiceData.issue_date), 'MMM dd, yyyy'), pageWidth - 65, 64)
-  
-  doc.setFont('helvetica', 'bold')
-  doc.text('ETA:', pageWidth - 65, 70)
-  doc.setFont('helvetica', 'normal')
-  doc.text(format(new Date(invoiceData.due_date), 'MMM dd, yyyy'), pageWidth - 65, 76)
+  doc.setTextColor(orange)
+  doc.text(`#${invoiceData.invoice_number}`, pageWidth - 15, 35, { align: 'right' })
 
+  doc.setFillColor(cream)
+  doc.roundedRect(pageWidth - 65, 40, 50, 22, 2, 2, 'F')
   const statusColors = {
     'paid': '#10B981',
     'sent': '#F59E0B',
     'overdue': '#EF4444',
-    'draft': '#6B7280'
+    'draft': navy
   }
-  const statusColor = statusColors[invoiceData.status as keyof typeof statusColors] || statusColors.draft
-  
+  const statusColor = statusColors[invoiceData.status as keyof typeof statusColors] || navy
   doc.setFillColor(statusColor)
-  doc.roundedRect(pageWidth - 35, 50, 25, 8, 1, 1, 'F')
+  doc.roundedRect(pageWidth - 32, 42, 14, 5, 2, 2, 'F')
+  doc.setFontSize(6)
+  doc.setTextColor('#FFFFFF')
+  doc.setFont('helvetica', 'bold')
+  doc.text(invoiceData.status.toUpperCase(), pageWidth - 25, 45.3, { align: 'center' })
   doc.setFontSize(7)
-  doc.setTextColor('#FFFFFF')
+  doc.setTextColor(navy)
+  doc.text('Invoice Date:', pageWidth - 62, 50)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(darkGray)
+  doc.text(format(new Date(invoiceData.issue_date), 'MMM dd, yyyy'), pageWidth - 62, 54)
   doc.setFont('helvetica', 'bold')
-  doc.text(invoiceData.status.toUpperCase(), pageWidth - 32, 55)
+  doc.setTextColor(navy)
+  doc.text('ETA:', pageWidth - 62, 58)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(darkGray)
+  doc.text(format(new Date(invoiceData.due_date), 'MMM dd, yyyy'), pageWidth - 62, 60)
 
-  yPosition = 90
-  doc.setFillColor(secondaryColor)
-  doc.rect(12, yPosition - 3, 45, 8, 'F')
-  
-  doc.setFontSize(9)
+  yPosition = 70
+  doc.setFillColor(navy)
+  doc.roundedRect(15, yPosition, 30, 7, 1, 1, 'F')
+  doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor('#FFFFFF')
-  doc.text('BILL TO', 15, yPosition + 2)
-  yPosition += 15
+  doc.text('BILL TO', 18, yPosition + 5)
+  yPosition += 11
 
-  doc.setFillColor(lightGray)
-  doc.rect(12, yPosition - 3, 110, 25, 'F')
-  
+  doc.setFillColor(cream)
+  doc.roundedRect(15, yPosition, pageWidth - 30, 24, 2, 2, 'F')
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(darkGray)
-  doc.text(invoiceData.client.name, 16, yPosition + 5)
-  yPosition += 8
-
+  doc.setTextColor(navy)
+  doc.text(invoiceData.client.name, 19, yPosition + 7)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  
+  doc.setTextColor(darkGray)
+  let clientY = yPosition + 13
   if (invoiceData.client.address) {
-    const addressLines = doc.splitTextToSize(invoiceData.client.address, 100)
-    doc.text(addressLines.slice(0, 1), 16, yPosition)
-    yPosition += 4
+    const addressLines = doc.splitTextToSize(invoiceData.client.address, pageWidth - 40)
+    doc.text(addressLines.slice(0, 1), 19, clientY)
+    clientY += 4.5
   }
-  
   if (invoiceData.client.email) {
-    doc.text(invoiceData.client.email, 16, yPosition)
-    yPosition += 4
+    doc.text(invoiceData.client.email, 19, clientY)
+    clientY += 4.5
   }
-  
   if (invoiceData.client.phone) {
-    doc.text(invoiceData.client.phone, 16, yPosition)
+    doc.text(invoiceData.client.phone, 19, clientY)
   }
 
-  const tableStartY = 135
-  const tableMargin = 10
+  yPosition += 32
+
+  const tableStartY = yPosition
+  const tableMargin = 15
   const tableWidth = pageWidth - (tableMargin * 2)
   const tableX = tableMargin
-  
-  const availableHeight = pageHeight - tableStartY - 120
+
+  const availableHeight = pageHeight - tableStartY - 90
   const baseRowHeight = 8
-  const tableHeaderHeight = 12
-  
+  const tableHeaderHeight = 9
+
   const maxPossibleItems = Math.floor((availableHeight - tableHeaderHeight) / baseRowHeight)
-  const actualRowHeight = invoiceData.items.length > maxPossibleItems ? 
+  const actualRowHeight = invoiceData.items.length > maxPossibleItems ?
     Math.max(6, (availableHeight - tableHeaderHeight) / invoiceData.items.length) : baseRowHeight
 
   yPosition = tableStartY
@@ -406,42 +413,23 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
 
   let currentX = tableX
   const columnPositions: Array<{ x: number; width: number; align: string }> = []
-  
+
   columns.forEach(col => {
-    columnPositions.push({
-      x: currentX,
-      width: col.width,
-      align: col.align
-    })
+    columnPositions.push({ x: currentX, width: col.width, align: col.align })
     currentX += col.width
   })
 
-  doc.setFillColor(secondaryColor)
+  doc.setFillColor(navy)
   doc.rect(tableX, tableStartY, tableWidth, tableHeaderHeight, 'F')
-
-  doc.setFontSize(8)
+  doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor('#FFFFFF')
-
   columns.forEach((col, index) => {
     const colPos = columnPositions[index]
     let textX = colPos.x + 3
-    
-    if (col.align === 'center') {
-      textX = colPos.x + (colPos.width / 2)
-    } else if (col.align === 'right') {
-      textX = colPos.x + colPos.width - 3
-    }
-    
-    doc.text(col.label, textX, tableStartY + 8, { align: col.align as any })
-  })
-
-  doc.setDrawColor('#FFFFFF')
-  doc.setLineWidth(0.5)
-  columnPositions.forEach((colPos, index) => {
-    if (index > 0) {
-      doc.line(colPos.x, tableStartY, colPos.x, tableStartY + tableHeaderHeight)
-    }
+    if (col.align === 'center') textX = colPos.x + (colPos.width / 2)
+    else if (col.align === 'right') textX = colPos.x + colPos.width - 3
+    doc.text(col.label, textX, tableStartY + 6, { align: col.align as any })
   })
 
   yPosition = tableStartY + tableHeaderHeight
@@ -464,7 +452,7 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
 
     doc.setFontSize(7)
     doc.setTextColor(darkGray)
-    
+
     const rowData = [
       doc.splitTextToSize(shipmentType, columnPositions[0].width - 6)[0] || shipmentType.substring(0, 18),
       doc.splitTextToSize(description, columnPositions[1].width - 6)[0] || description.substring(0, 25),
@@ -478,117 +466,94 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
       const colPos = columnPositions[colIndex]
       const col = columns[colIndex]
       let textX = colPos.x + 3
-      
-      if (col.align === 'center') {
-        textX = colPos.x + (colPos.width / 2)
-      } else if (col.align === 'right') {
-        textX = colPos.x + colPos.width - 3
-      }
-      
+      if (col.align === 'center') textX = colPos.x + (colPos.width / 2)
+      else if (col.align === 'right') textX = colPos.x + colPos.width - 3
       doc.text(cellData, textX, yPosition + (actualRowHeight / 2) + 2, { align: col.align as any })
     })
-    
+
     yPosition += actualRowHeight
   }
 
   const tableEndY = yPosition
-  const tableHeight = tableEndY - tableStartY
-  
   doc.setDrawColor('#E5E7EB')
-  doc.setLineWidth(0.8)
-  doc.rect(tableX, tableStartY, tableWidth, tableHeight)
-
-  doc.setDrawColor('#E5E7EB')
-  doc.setLineWidth(0.3)
-  columnPositions.forEach((colPos, index) => {
-    if (index > 0) {
-      doc.line(colPos.x, tableStartY, colPos.x, tableEndY)
-    }
-  })
-
-  doc.setLineWidth(0.5)
-  doc.line(tableX, tableStartY + tableHeaderHeight, tableX + tableWidth, tableStartY + tableHeaderHeight)
+  doc.setLineWidth(0.4)
+  doc.rect(tableX, tableStartY, tableWidth, tableEndY - tableStartY)
 
   yPosition = tableEndY + 10
-  const totalsX = pageWidth - 75
+  doc.setDrawColor('#EAECF0')
+  doc.roundedRect(pageWidth - 80, yPosition - 3, 65, invoiceData.discount_amount > 0 ? 26 : 18, 2, 2)
 
-  doc.setFillColor(lightGray)
-  doc.rect(totalsX - 35, yPosition - 3, 70, 30, 'F')
-
-  doc.setFontSize(9)
+  doc.setFontSize(8)
   doc.setTextColor(darkGray)
   doc.setFont('helvetica', 'normal')
-  doc.text('Subtotal:', totalsX - 30, yPosition + 5)
-  doc.text(`${getCurrencySymbol(invoiceData.currency)}${invoiceData.subtotal.toFixed(2)}`, totalsX + 30, yPosition + 5, { align: 'right' })
+  doc.text('Subtotal:', pageWidth - 76, yPosition + 4)
+  doc.text(`${getCurrencySymbol(invoiceData.currency)}${invoiceData.subtotal.toFixed(2)}`, pageWidth - 18, yPosition + 4, { align: 'right' })
   yPosition += 7
 
   if (invoiceData.discount_amount > 0) {
-    doc.text('Discount:', totalsX - 30, yPosition)
+    doc.text('Discount:', pageWidth - 76, yPosition + 2)
     doc.setTextColor('#EF4444')
-    doc.text(`-${getCurrencySymbol(invoiceData.currency)}${invoiceData.discount_amount.toFixed(2)}`, totalsX + 30, yPosition, { align: 'right' })
+    doc.text(`-${getCurrencySymbol(invoiceData.currency)}${invoiceData.discount_amount.toFixed(2)}`, pageWidth - 18, yPosition + 2, { align: 'right' })
     doc.setTextColor(darkGray)
     yPosition += 7
   }
 
-  doc.setDrawColor(primaryColor)
-  doc.setLineWidth(1)
-  doc.line(totalsX - 30, yPosition, totalsX + 30, yPosition)
-  yPosition += 8
-
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
-  doc.setTextColor(primaryColor)
-  doc.text('TOTAL:', totalsX - 30, yPosition)
-  doc.text(`${getCurrencySymbol(invoiceData.currency)}${invoiceData.total_amount.toFixed(2)}`, totalsX + 30, yPosition, { align: 'right' })
+  doc.setTextColor(orange)
+  doc.text('TOTAL:', pageWidth - 76, yPosition + 5)
+  doc.text(`${getCurrencySymbol(invoiceData.currency)}${invoiceData.total_amount.toFixed(2)}`, pageWidth - 18, yPosition + 5, { align: 'right' })
 
-  yPosition += 15
+  yPosition += 18
   if (invoiceData.signature) {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(secondaryColor)
-    doc.text('CREATED BY:', 12, yPosition)
+    doc.setTextColor(navy)
+    doc.text('CREATED BY:', 15, yPosition)
     yPosition += 6
-    
-    doc.setDrawColor('#E5E7EB')
-    doc.setLineWidth(0.5)
-    doc.line(12, yPosition + 8, 80, yPosition + 8)
-    
+
+    doc.setDrawColor('#D0D5DD')
+    doc.setLineWidth(0.4)
+    doc.line(15, yPosition + 6, 70, yPosition + 6)
+
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(darkGray)
     doc.setFontSize(9)
-    doc.text(invoiceData.signature, 12, yPosition + 14)
-    
-    yPosition += 20
+    doc.text(invoiceData.signature, 15, yPosition + 11)
+
+    yPosition += 17
   }
 
   if (invoiceData.notes || invoiceData.payment_instructions) {
     const notesText = invoiceData.notes || ''
     const paymentText = invoiceData.payment_instructions || ''
     const combinedText = [notesText, paymentText].filter(Boolean).join(' ')
-    
+
     if (combinedText && yPosition < pageHeight - 25) {
       doc.setFontSize(8)
       doc.setFont('helvetica', 'bold')
-      doc.setTextColor(secondaryColor)
-      doc.text('NOTES:', 12, yPosition)
+      doc.setTextColor(navy)
+      doc.text('NOTES:', 15, yPosition)
       yPosition += 5
-      
+
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(darkGray)
       doc.setFontSize(7)
-      const textLines = doc.splitTextToSize(combinedText, pageWidth - 24)
-      doc.text(textLines.slice(0, 2), 12, yPosition)
+      const textLines = doc.splitTextToSize(combinedText, pageWidth - 30)
+      doc.text(textLines.slice(0, 2), 15, yPosition)
     }
   }
 
   const footerY = pageHeight - 15
-  doc.setFillColor(lightGray)
-  doc.rect(0, footerY - 5, pageWidth, 20, 'F')
-  
+  doc.setFillColor(cream)
+  doc.rect(0, footerY - 6, pageWidth, 21, 'F')
+  doc.setDrawColor(orange)
+  doc.setLineWidth(1)
+  doc.line(0, footerY - 6, pageWidth, footerY - 6)
   doc.setFontSize(7)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(darkGray)
-  doc.text(`Generated on ${format(new Date(), 'MMM dd, yyyy')}`, 12, footerY)
+  doc.setTextColor(slate)
+  doc.text(`Generated on ${format(new Date(), 'MMM dd, yyyy')}`, 15, footerY)
   doc.text(`Invoice #${invoiceData.invoice_number}`, pageWidth - 60, footerY)
 
   doc.save(`Invoice-${invoiceData.invoice_number}.pdf`)
@@ -600,11 +565,13 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   const pageHeight = doc.internal.pageSize.height
   let yPosition = 15
 
+  // Company brand colors
   const primaryColor = '#F26B1D'
   const secondaryColor = '#0B2545'
   const lightGray = '#F8F9FA'
   const darkGray = '#374151'
 
+  // Add very subtle watermark logo
   const addWatermark = async () => {
     try {
       const logoUrl = '/logoomni-removebg-preview.png'
@@ -641,12 +608,15 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     }
   }
 
+  // Add watermark first
   await addWatermark()
 
+  // Header background - compact
   doc.setFillColor(primaryColor)
   doc.rect(0, 0, pageWidth, 45, 'F')
 
-  const companyInfoX = 15
+  // Company information (NO LOGO - starts from left margin)
+  const companyInfoX = 15 // Start from left margin instead of after logo
   let companyInfoY = 15
 
   doc.setFontSize(16)
@@ -674,6 +644,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     doc.text(`${invoiceData.business.email}`, companyInfoX, companyInfoY)
   }
 
+  // Invoice Title and Number
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor('#FFFFFF')
@@ -683,6 +654,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   doc.setFont('helvetica', 'normal')
   doc.text(`#${invoiceData.invoice_number}`, pageWidth - 50, 30)
 
+  // Invoice Details Box
   doc.setFillColor(lightGray)
   doc.rect(pageWidth - 70, 50, 65, 30, 'F')
   
@@ -698,6 +670,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   doc.setFont('helvetica', 'normal')
   doc.text(format(new Date(invoiceData.due_date), 'MMM dd, yyyy'), pageWidth - 65, 76)
 
+  // Status badge
   const statusColors = {
     'paid': '#10B981',
     'sent': '#F59E0B',
@@ -713,6 +686,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   doc.setFont('helvetica', 'bold')
   doc.text(invoiceData.status.toUpperCase(), pageWidth - 32, 55)
 
+  // Bill To Section
   yPosition = 90
   doc.setFillColor(secondaryColor)
   doc.rect(12, yPosition - 3, 45, 8, 'F')
@@ -723,6 +697,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   doc.text('BILL TO', 15, yPosition + 2)
   yPosition += 15
 
+  // Client info box
   doc.setFillColor(lightGray)
   doc.rect(12, yPosition - 3, 110, 25, 'F')
   
@@ -750,6 +725,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     doc.text(invoiceData.client.phone, 16, yPosition)
   }
 
+  // Items Table - SAME RESTRUCTURED APPROACH
   const tableStartY = 135
   const tableMargin = 10
   const tableWidth = pageWidth - (tableMargin * 2)
@@ -765,6 +741,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
 
   yPosition = tableStartY
 
+  // Define precise column positions and widths
   const columns = [
     { label: 'SHIPMENT TYPE', width: tableWidth * 0.20, align: 'left' },
     { label: 'DESCRIPTION', width: tableWidth * 0.30, align: 'left' },
@@ -774,6 +751,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     { label: 'AMOUNT', width: tableWidth * 0.15, align: 'right' }
   ]
 
+  // Calculate column positions
   let currentX = tableX
   const columnPositions: Array<{ x: number; width: number; align: string }> = []
   
@@ -786,6 +764,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     currentX += col.width
   })
 
+  // Table Header
   doc.setFillColor(secondaryColor)
   doc.rect(tableX, tableStartY, tableWidth, tableHeaderHeight, 'F')
 
@@ -806,6 +785,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     doc.text(col.label, textX, tableStartY + 8, { align: col.align as any })
   })
 
+  // Draw vertical lines for column separators
   doc.setDrawColor('#FFFFFF')
   doc.setLineWidth(0.5)
   columnPositions.forEach((colPos, index) => {
@@ -814,6 +794,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     }
   })
 
+  // Table Items
   yPosition = tableStartY + tableHeaderHeight
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(darkGray)
@@ -861,6 +842,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     yPosition += actualRowHeight
   }
 
+  // Table border and separators
   const tableEndY = yPosition
   const tableHeight = tableEndY - tableStartY
   
@@ -878,6 +860,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   doc.setLineWidth(0.5)
   doc.line(tableX, tableStartY + tableHeaderHeight, tableX + tableWidth, tableStartY + tableHeaderHeight)
 
+  // Totals Section
   yPosition = tableEndY + 10
   const totalsX = pageWidth - 75
 
@@ -910,6 +893,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   doc.text('TOTAL:', totalsX - 30, yPosition)
   doc.text(`${getCurrencySymbol(invoiceData.currency)}${invoiceData.total_amount.toFixed(2)}`, totalsX + 30, yPosition, { align: 'right' })
 
+  // Created By Section
   yPosition += 15
   if (invoiceData.signature) {
     doc.setFontSize(8)
@@ -930,6 +914,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     yPosition += 20
   }
 
+  // Notes and Payment Instructions
   if (invoiceData.notes || invoiceData.payment_instructions) {
     const notesText = invoiceData.notes || ''
     const paymentText = invoiceData.payment_instructions || ''
@@ -950,6 +935,7 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
     }
   }
 
+  // Footer
   const footerY = pageHeight - 15
   doc.setFillColor(lightGray)
   doc.rect(0, footerY - 5, pageWidth, 20, 'F')
@@ -960,9 +946,11 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
   doc.text(`Generated on ${format(new Date(), 'MMM dd, yyyy')}`, 12, footerY)
   doc.text(`Invoice #${invoiceData.invoice_number}`, pageWidth - 60, footerY)
 
+  // Return as base64 string
   return doc.output('datauristring').split(',')[1]
 }
 
+// Enhanced function to generate high-quality invoice image for WhatsApp sharing
 export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<string> => {
   if (invoiceData.invoice_type === 'local_delivery') {
     return generateLocalDeliveryImage(invoiceData)
@@ -990,11 +978,14 @@ export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<st
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 24px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                <img src="/omnicargo-mark.png" alt="OmniCargo" style="height: 46px; width: auto; display: block;" />
-                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
+              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
+                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
+                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
+                </svg>
+                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
               </div>
-              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 56px; font-weight: 500;">SOLUTIONS LIMITED</p>
+              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
 
               <div style="margin-top: 24px; font-size: 11px; color: #475467;">
                 ${invoiceData.business.address ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${invoiceData.business.address}</span></div>` : ''}
@@ -1141,18 +1132,15 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 20px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                <img src="/omnicargo-mark.png" alt="OmniCargo" style="height: 46px; width: auto; display: block;" />
-                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
+              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
+                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
+                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
+                </svg>
+                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
               </div>
-              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 56px; font-weight: 500;">SOLUTIONS LIMITED</p>
+              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
               <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 18px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
-
-              <div style="margin-top: 12px; font-size: 11px; color: #475467;">
-                ${invoiceData.business.address ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${invoiceData.business.address}</span></div>` : ''}
-                ${invoiceData.business.phone ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.81.35 1.6.68 2.34a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.74-1.25a2 2 0 012.11-.45c.74.33 1.53.56 2.34.68A2 2 0 0122 16.92z"/></svg><span>${invoiceData.business.phone}</span></div>` : ''}
-                ${invoiceData.business.email ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg><span>${invoiceData.business.email}</span></div>` : ''}
-              </div>
             </div>
 
             <div style="width: 1px; background: #D0D5DD; margin: 3px 18px;"></div>
