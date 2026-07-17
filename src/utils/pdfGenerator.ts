@@ -94,6 +94,21 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
   doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
   doc.setTextColor(slate)
   doc.text('LOCAL DELIVERY INVOICE', 30, 39)
+  doc.setTextColor(slate)
+  doc.setFontSize(7)
+  let contactY = 44
+  if (invoiceData.business.address) {
+    const addressLines = doc.splitTextToSize(invoiceData.business.address, 90)
+    doc.text(addressLines.slice(0, 1), 30, contactY)
+    contactY += 4.5
+  }
+  if (invoiceData.business.phone) {
+    doc.text(invoiceData.business.phone, 30, contactY)
+    contactY += 4.5
+  }
+  if (invoiceData.business.email) {
+    doc.text(invoiceData.business.email, 30, contactY)
+  }
 
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
@@ -201,8 +216,8 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
       item.description,
       String(item.item_quantity ?? '-'),
       cbmVal.toFixed(3),
-      `₵${item.unit_price.toFixed(2)}`,
-      `₵${item.total.toFixed(2)}`
+      `GHS ${item.unit_price.toFixed(2)}`,
+      `GHS ${item.total.toFixed(2)}`
     ]
     rowData.forEach((cell, i) => {
       const col = columns[i]
@@ -226,7 +241,7 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
   doc.setFontSize(11)
   doc.setTextColor(orange)
   doc.text('TOTAL:', pageWidth - 76, yPosition + 6)
-  doc.text(`₵${invoiceData.total_amount.toFixed(2)}`, pageWidth - 18, yPosition + 6, { align: 'right' })
+  doc.text(`GHS ${invoiceData.total_amount.toFixed(2)}`, pageWidth - 18, yPosition + 6, { align: 'right' })
 
   yPosition += 22
   if (invoiceData.signature) {
@@ -587,6 +602,21 @@ const generateLocalDeliveryPDFBase64 = async (invoiceData: InvoiceData): Promise
   doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
   doc.setTextColor(slate)
   doc.text('LOCAL DELIVERY INVOICE', 30, 39)
+  doc.setTextColor(slate)
+  doc.setFontSize(7)
+  let contactY = 44
+  if (invoiceData.business.address) {
+    const addressLines = doc.splitTextToSize(invoiceData.business.address, 90)
+    doc.text(addressLines.slice(0, 1), 30, contactY)
+    contactY += 4.5
+  }
+  if (invoiceData.business.phone) {
+    doc.text(invoiceData.business.phone, 30, contactY)
+    contactY += 4.5
+  }
+  if (invoiceData.business.email) {
+    doc.text(invoiceData.business.email, 30, contactY)
+  }
 
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
@@ -694,8 +724,8 @@ const generateLocalDeliveryPDFBase64 = async (invoiceData: InvoiceData): Promise
       item.description,
       String(item.item_quantity ?? '-'),
       cbmVal.toFixed(3),
-      `₵${item.unit_price.toFixed(2)}`,
-      `₵${item.total.toFixed(2)}`
+      `GHS ${item.unit_price.toFixed(2)}`,
+      `GHS ${item.total.toFixed(2)}`
     ]
     rowData.forEach((cell, i) => {
       const col = columns[i]
@@ -719,7 +749,7 @@ const generateLocalDeliveryPDFBase64 = async (invoiceData: InvoiceData): Promise
   doc.setFontSize(11)
   doc.setTextColor(orange)
   doc.text('TOTAL:', pageWidth - 76, yPosition + 6)
-  doc.text(`₵${invoiceData.total_amount.toFixed(2)}`, pageWidth - 18, yPosition + 6, { align: 'right' })
+  doc.text(`GHS ${invoiceData.total_amount.toFixed(2)}`, pageWidth - 18, yPosition + 6, { align: 'right' })
 
   yPosition += 22
   if (invoiceData.signature) {
@@ -1243,7 +1273,13 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
                 <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
               </div>
               <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
-              <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 18px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
+              <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 12px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
+
+              <div style="margin-top: 16px; font-size: 11px; color: #475467;">
+                ${invoiceData.business.address ? `<div style="margin-bottom: 6px;">${invoiceData.business.address}</div>` : ''}
+                ${invoiceData.business.phone ? `<div style="margin-bottom: 6px;">${invoiceData.business.phone}</div>` : ''}
+                ${invoiceData.business.email ? `<div style="margin-bottom: 6px;">${invoiceData.business.email}</div>` : ''}
+              </div>
             </div>
 
             <div style="width: 1px; background: #D0D5DD; margin: 3px 18px;"></div>
