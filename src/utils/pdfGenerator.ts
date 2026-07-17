@@ -49,6 +49,36 @@ interface InvoiceData {
   }
 }
 
+let cachedLogo: { dataUrl: string; width: number; height: number } | null = null
+
+const getLogoImage = async (): Promise<{ dataUrl: string; width: number; height: number } | null> => {
+  if (cachedLogo) return cachedLogo
+  try {
+    return await new Promise((resolve) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(null)
+          return
+        }
+        ctx.drawImage(img, 0, 0)
+        const dataUrl = canvas.toDataURL('image/png')
+        cachedLogo = { dataUrl, width: img.naturalWidth, height: img.naturalHeight }
+        resolve(cachedLogo)
+      }
+      img.onerror = () => resolve(null)
+      img.src = '/omnicargo-logo.png'
+    })
+  } catch {
+    return null
+  }
+}
+
 const drawLogoMark = (doc: jsPDF, x: number, y: number, navy: string, orange: string) => {
   doc.setFillColor(orange)
   doc.circle(x, y, 3, 'F')
@@ -81,17 +111,31 @@ const generateLocalDeliveryPDF = async (invoiceData: InvoiceData): Promise<void>
 
   drawInvoiceBanner(doc, pageWidth, navy)
 
-  drawLogoMark(doc, 22, 26, navy, orange)
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(orange)
-  doc.text('OMNi', 30, 28)
-  const omniWidth = doc.getTextWidth('OMNi')
-  doc.setTextColor(navy)
-  doc.text('CARGO', 30 + omniWidth, 28)
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'normal')
-  doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  const logo = await getLogoImage()
+  if (logo) {
+    const maxWidth = 55
+    const maxHeight = 20
+    const aspectRatio = logo.width / logo.height
+    let logoDisplayWidth = maxWidth
+    let logoDisplayHeight = maxWidth / aspectRatio
+    if (logoDisplayHeight > maxHeight) {
+      logoDisplayHeight = maxHeight
+      logoDisplayWidth = maxHeight * aspectRatio
+    }
+    doc.addImage(logo.dataUrl, 'PNG', 15, 9, logoDisplayWidth, logoDisplayHeight)
+  } else {
+    drawLogoMark(doc, 22, 26, navy, orange)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(orange)
+    doc.text('OMNi', 30, 28)
+    const omniWidth = doc.getTextWidth('OMNi')
+    doc.setTextColor(navy)
+    doc.text('CARGO', 30 + omniWidth, 28)
+    doc.setFontSize(6)
+    doc.setFont('helvetica', 'normal')
+    doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  }
   doc.setTextColor(slate)
   doc.text('LOCAL DELIVERY INVOICE', 30, 39)
   doc.setTextColor(slate)
@@ -300,17 +344,31 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
 
   drawInvoiceBanner(doc, pageWidth, navy)
 
-  drawLogoMark(doc, 22, 26, navy, orange)
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(orange)
-  doc.text('OMNi', 30, 28)
-  const omniWidth = doc.getTextWidth('OMNi')
-  doc.setTextColor(navy)
-  doc.text('CARGO', 30 + omniWidth, 28)
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'normal')
-  doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  const logo = await getLogoImage()
+  if (logo) {
+    const maxWidth = 55
+    const maxHeight = 20
+    const aspectRatio = logo.width / logo.height
+    let logoDisplayWidth = maxWidth
+    let logoDisplayHeight = maxWidth / aspectRatio
+    if (logoDisplayHeight > maxHeight) {
+      logoDisplayHeight = maxHeight
+      logoDisplayWidth = maxHeight * aspectRatio
+    }
+    doc.addImage(logo.dataUrl, 'PNG', 15, 9, logoDisplayWidth, logoDisplayHeight)
+  } else {
+    drawLogoMark(doc, 22, 26, navy, orange)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(orange)
+    doc.text('OMNi', 30, 28)
+    const omniWidth = doc.getTextWidth('OMNi')
+    doc.setTextColor(navy)
+    doc.text('CARGO', 30 + omniWidth, 28)
+    doc.setFontSize(6)
+    doc.setFont('helvetica', 'normal')
+    doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  }
 
   doc.setTextColor(slate)
   doc.setFontSize(7)
@@ -589,17 +647,31 @@ const generateLocalDeliveryPDFBase64 = async (invoiceData: InvoiceData): Promise
 
   drawInvoiceBanner(doc, pageWidth, navy)
 
-  drawLogoMark(doc, 22, 26, navy, orange)
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(orange)
-  doc.text('OMNi', 30, 28)
-  const omniWidth = doc.getTextWidth('OMNi')
-  doc.setTextColor(navy)
-  doc.text('CARGO', 30 + omniWidth, 28)
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'normal')
-  doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  const logo = await getLogoImage()
+  if (logo) {
+    const maxWidth = 55
+    const maxHeight = 20
+    const aspectRatio = logo.width / logo.height
+    let logoDisplayWidth = maxWidth
+    let logoDisplayHeight = maxWidth / aspectRatio
+    if (logoDisplayHeight > maxHeight) {
+      logoDisplayHeight = maxHeight
+      logoDisplayWidth = maxHeight * aspectRatio
+    }
+    doc.addImage(logo.dataUrl, 'PNG', 15, 9, logoDisplayWidth, logoDisplayHeight)
+  } else {
+    drawLogoMark(doc, 22, 26, navy, orange)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(orange)
+    doc.text('OMNi', 30, 28)
+    const omniWidth = doc.getTextWidth('OMNi')
+    doc.setTextColor(navy)
+    doc.text('CARGO', 30 + omniWidth, 28)
+    doc.setFontSize(6)
+    doc.setFont('helvetica', 'normal')
+    doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  }
   doc.setTextColor(slate)
   doc.text('LOCAL DELIVERY INVOICE', 30, 39)
   doc.setTextColor(slate)
@@ -808,17 +880,31 @@ export const generateInvoicePDFBase64 = async (invoiceData: InvoiceData): Promis
 
   drawInvoiceBanner(doc, pageWidth, navy)
 
-  drawLogoMark(doc, 22, 26, navy, orange)
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(orange)
-  doc.text('OMNi', 30, 28)
-  const omniWidth = doc.getTextWidth('OMNi')
-  doc.setTextColor(navy)
-  doc.text('CARGO', 30 + omniWidth, 28)
-  doc.setFontSize(6)
-  doc.setFont('helvetica', 'normal')
-  doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  const logo = await getLogoImage()
+  if (logo) {
+    const maxWidth = 55
+    const maxHeight = 20
+    const aspectRatio = logo.width / logo.height
+    let logoDisplayWidth = maxWidth
+    let logoDisplayHeight = maxWidth / aspectRatio
+    if (logoDisplayHeight > maxHeight) {
+      logoDisplayHeight = maxHeight
+      logoDisplayWidth = maxHeight * aspectRatio
+    }
+    doc.addImage(logo.dataUrl, 'PNG', 15, 9, logoDisplayWidth, logoDisplayHeight)
+  } else {
+    drawLogoMark(doc, 22, 26, navy, orange)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(orange)
+    doc.text('OMNi', 30, 28)
+    const omniWidth = doc.getTextWidth('OMNi')
+    doc.setTextColor(navy)
+    doc.text('CARGO', 30 + omniWidth, 28)
+    doc.setFontSize(6)
+    doc.setFont('helvetica', 'normal')
+    doc.text('S O L U T I O N S   L I M I T E D', 30, 33)
+  }
 
   doc.setTextColor(slate)
   doc.setFontSize(7)
@@ -1110,14 +1196,9 @@ export const generateInvoiceImage = async (invoiceData: InvoiceData): Promise<st
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 24px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
-                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
-                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
-                </svg>
-                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
+              <div style="margin-bottom: 6px;">
+                <img src="/omnicargo-logo.png" style="height: 52px; max-width: 220px; object-fit: contain; display: block;" onerror="this.style.display='none'" />
               </div>
-              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
 
               <div style="margin-top: 24px; font-size: 11px; color: #475467;">
                 ${invoiceData.business.address ? `<div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${invoiceData.business.address}</span></div>` : ''}
@@ -1265,14 +1346,9 @@ const generateLocalDeliveryImage = async (invoiceData: InvoiceData): Promise<str
         <div style="padding: 32px 44px 0 44px;">
           <div style="display: flex; align-items: stretch; margin-bottom: 20px;">
             <div style="flex: 1; padding-right: 24px;">
-              <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${orange}; flex-shrink: 0;"></div>
-                <svg width="48" height="48" viewBox="0 0 100 100" style="margin-left: 4px;">
-                  <path d="M 76 14 A 43 43 0 1 0 76 86" fill="none" stroke="${navy}" stroke-width="27"/>
-                </svg>
-                <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.01em; margin-left: 6px;"><span style="color: ${orange};">OMNi</span><span style="color: ${navy};">CARGO</span></span>
+              <div style="margin-bottom: 6px;">
+                <img src="/omnicargo-logo.png" style="height: 52px; max-width: 220px; object-fit: contain; display: block;" onerror="this.style.display='none'" />
               </div>
-              <p style="font-size: 10px; letter-spacing: 0.32em; color: ${navy}; margin: 0 0 0 82px; font-weight: 500;">SOLUTIONS LIMITED</p>
               <p style="font-size: 10px; letter-spacing: 0.05em; color: #667085; margin: 12px 0 0 0; text-transform: uppercase;">Local Delivery Invoice</p>
 
               <div style="margin-top: 16px; font-size: 11px; color: #475467;">
