@@ -854,7 +854,6 @@ export const InvoiceForm: React.FC = () => {
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                    required
                   >
                     <option value="">Select or clear...</option>
                     {shipmentPrices.map((price) => (
@@ -872,7 +871,6 @@ export const InvoiceForm: React.FC = () => {
                       onChange={(e) => updateCurrentItem('shipment_type', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                       placeholder="Enter shipment type..."
-                      required
                     />
                     <button
                       type="button"
@@ -898,7 +896,6 @@ export const InvoiceForm: React.FC = () => {
                   onChange={(e) => updateCurrentItem('description', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                   placeholder="Item description"
-                  required
                 />
               </div>
               
@@ -931,7 +928,6 @@ export const InvoiceForm: React.FC = () => {
                     updateCurrentItem('cbm', value)
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                  required
                 />
               </div>
               
@@ -950,7 +946,6 @@ export const InvoiceForm: React.FC = () => {
                     updateCurrentItem('unit_price', value)
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                  required
                 />
               </div>
               
