@@ -87,6 +87,7 @@ export const InvoiceForm: React.FC = () => {
     payment_instructions: ''
   })
 
+  const [isCustomShipmentType, setIsCustomShipmentType] = useState(false)
   const [items, setItems] = useState<InvoiceItem[]>([])
   const [currentItem, setCurrentItem] = useState<InvoiceItem>({
     id: Date.now().toString(),
@@ -228,6 +229,7 @@ export const InvoiceForm: React.FC = () => {
       unit_price: '',
       total: 0
     })
+    setIsCustomShipmentType(false)
   }
 
   const removeItem = (id: string) => {
@@ -404,15 +406,17 @@ export const InvoiceForm: React.FC = () => {
       return
     }
 
-    // Check if there are any items or if current item has data
-    const currentItemCbm = parseFloat(currentItem.cbm.toString()) || 0
-    const allItems = currentItem.shipment_type.trim() && currentItem.description.trim() && currentItemCbm > 0 
-      ? [currentItem, ...items] 
-      : items
+    // Only items explicitly added via "+ Add Item" are saved. Whatever is
+    // still sitting in the "Add New Item" form above is treated as an
+    // unfinished draft and is intentionally NOT auto-merged in - that old
+    // behavior is what forced you to fill out or add a new item just to
+    // save a simple deletion. An empty item list is now allowed too.
+    const allItems = items
 
-    if (allItems.length === 0) {
-      showError('Validation Error', 'Please add at least one item to the invoice')
-      return
+    const currentItemCbm = parseFloat(currentItem.cbm.toString()) || 0
+    const hasDraftItemData = currentItem.shipment_type.trim() || currentItem.description.trim() || currentItemCbm > 0
+    if (hasDraftItemData) {
+      showInfo('Unsaved Item Not Included', 'The item you were typing in "Add New Item" was not saved. Tap "Add Item" first if you want it included.')
     }
 
     // Validate all items have required fields
@@ -592,18 +596,9 @@ export const InvoiceForm: React.FC = () => {
       return false
     }
 
-    // Check if there are any valid items
-    const currentItemCbm = parseFloat(currentItem.cbm.toString()) || 0
-    const allItems = currentItem.shipment_type.trim() && currentItem.description.trim() && currentItemCbm > 0 
-      ? [currentItem, ...items] 
-      : items
-
-    if (allItems.length === 0) {
-      return false
-    }
-
-    // Validate all items
-    return allItems.every(item => {
+    // Items are optional now - whatever has been explicitly added via
+    // "+ Add Item" is what gets saved; an empty list no longer blocks saving.
+    return items.every(item => {
       const itemCbm = typeof item.cbm === 'string' ? parseFloat(item.cbm) : item.cbm
       const itemPrice = typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price
       return item.shipment_type.trim() && 
@@ -847,22 +842,50 @@ export const InvoiceForm: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Shipment Type *
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
+                {!isCustomShipmentType ? (
+                  <select
                     value={currentItem.shipment_type}
-                    onChange={(e) => updateCurrentItem('shipment_type', e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setIsCustomShipmentType(true)
+                        updateCurrentItem('shipment_type', '')
+                      } else {
+                        updateCurrentItem('shipment_type', e.target.value)
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                    placeholder="Enter shipment type..."
                     required
-                    list="shipment-types-current"
-                  />
-                  <datalist id="shipment-types-current">
+                  >
+                    <option value="">Select or clear...</option>
                     {shipmentPrices.map((price) => (
-                      <option key={price.id} value={price.shipment_type} />
+                      <option key={price.id} value={price.shipment_type}>
+                        {price.shipment_type}
+                      </option>
                     ))}
-                  </datalist>
-                </div>
+                    <option value="__custom__">Custom (type manually)</option>
+                  </select>
+                ) : (
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={currentItem.shipment_type}
+                      onChange={(e) => updateCurrentItem('shipment_type', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                      placeholder="Enter shipment type..."
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomShipmentType(false)
+                        updateCurrentItem('shipment_type', '')
+                      }}
+                      className="text-xs text-primary-600 hover:text-primary-700"
+                    >
+                      Choose from list instead
+                    </button>
+                  </div>
+                )}
               </div>
               
               <div>
